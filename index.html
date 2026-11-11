@@ -327,7 +327,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.4 login authentication</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.5 login authentication</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -551,8 +551,11 @@ function deviceLabel() {
 function faceInit() {
   FACE.api = !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
   FACE.label = bioLabel();
-  try { FACE.here = !IN_GAS && !!CFG.appUrl && new URL(CFG.appUrl).origin === location.origin; } catch (e) { FACE.here = false; }
-  FACE.ready = FACE.api && FACE.here;
+  // Any hosted copy (GitHub Pages, https) can run the camera face scan, even if APP_URL points to another address.
+  FACE.here = !IN_GAS && location.protocol === 'https:';
+  var sameSite = false;
+  try { sameSite = !!CFG.appUrl && new URL(CFG.appUrl).origin === location.origin; } catch (e) { sameSite = false; }
+  FACE.ready = FACE.api && FACE.here && sameSite;   // Face ID / fingerprint (passkeys) only work on the APP_URL address
   if (!FACE.ready) return Promise.resolve();
   return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function (ok) { FACE.platform = ok; }, function () { FACE.platform = false; });
 }
@@ -888,6 +891,7 @@ function startScan(kind, auto) {
   setErr(''); btn.disabled = true; btn.classList.add('hidden'); scanMsg('Opening your camera…');
   var camP = camStart(video);   // called straight from the tap (iPhone needs this)
   camP.then(function () {
+    if (!$('scanBtn') || !$('scanBtn').disabled) return;   // the scan already stopped with an error
     var idle = $('scanIdle'); if (idle) idle.classList.add('hidden');
     if (!window.faceapi || !faceapi.nets.faceRecognitionNet.isLoaded) scanMsg('Loading the face scanner… (the first time takes a few seconds)');
   }).catch(function () { /* handled below */ });
