@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4f46e5">
+<title>CourseMatch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --brand:#4f46e5; --brand-d:#4338ca; --brand-l:#eef2ff; --brand-ll:#f5f7ff;
+    --accent:#0d9488; --accent-l:#e6fbf8;
+    --ink:#0f172a; --ink2:#334155; --muted:#64748b; --line:#e5e9f2; --bg:#f4f6fb; --card:#fff;
+    --ok:#059669; --ok-l:#ecfdf5; --warn:#b45309; --warn-l:#fffbeb; --bad:#dc2626; --bad-l:#fef2f2;
+    --r:16px; --r-sm:10px;
+    --shadow:0 1px 2px rgba(15,23,42,.04), 0 6px 20px rgba(15,23,42,.06);
+    --shadow-lg:0 10px 40px rgba(15,23,42,.14);
+    --grad:linear-gradient(135deg,#4f46e5 0%,#6d5df6 45%,#0d9488 100%);
+  }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html { -webkit-text-size-adjust:100%; }
+  body { margin:0; font-family:'Plus Jakarta Sans',-apple-system,'Segoe UI',Roboto,Arial,sans-serif; font-size:15px; line-height:1.5;
+         color:var(--ink); background:var(--bg); }
+  a { color:var(--brand); text-decoration:none; font-weight:600; cursor:pointer; }
+  a:hover { text-decoration:underline; }
+  svg.i { width:20px; height:20px; flex:none; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; vertical-align:middle; }
+
+  /* ---------- header + navigation ---------- */
+  .top { position:sticky; top:0; z-index:30; background:rgba(255,255,255,.88); backdrop-filter:saturate(1.6) blur(14px);
+         -webkit-backdrop-filter:saturate(1.6) blur(14px); border-bottom:1px solid var(--line); }
+  .top-in { max-width:1080px; margin:0 auto; display:flex; align-items:center; gap:14px; padding:10px 18px; min-height:60px; }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:800; font-size:18px; letter-spacing:-.02em; color:var(--ink); white-space:nowrap; }
+  .logo { width:34px; height:34px; border-radius:10px; background:var(--grad); display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 4px 12px rgba(79,70,229,.35); }
+  .logo svg { width:20px; height:20px; stroke:#fff; }
+  .nav { display:flex; gap:4px; flex:1; justify-content:center; }
+  .nav a { display:flex; align-items:center; gap:7px; color:var(--ink2); padding:8px 14px; border-radius:999px; font-size:14px; font-weight:600; position:relative; }
+  .nav a:hover { background:var(--brand-ll); text-decoration:none; }
+  .nav a.on { background:var(--brand-l); color:var(--brand-d); }
+  .nav a svg.i { width:18px; height:18px; }
+  .dot { position:absolute; top:3px; right:6px; min-width:17px; height:17px; line-height:17px; text-align:center; border-radius:9px; background:var(--bad); color:#fff; font-size:10px; font-weight:800; padding:0 4px; border:2px solid #fff; }
+  .me { position:relative; }
+  .me-btn { display:flex; align-items:center; gap:8px; background:none; border:1px solid var(--line); color:var(--ink); padding:4px 10px 4px 4px; border-radius:999px; font-weight:600; }
+  .me-btn:hover { background:var(--brand-ll); }
+  .me-name { max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; }
+  .menu { position:absolute; right:0; top:calc(100% + 8px); background:#fff; border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow-lg); min-width:220px; padding:6px; z-index:40; }
+  .menu .mh { padding:10px 12px; border-bottom:1px solid var(--line); margin-bottom:4px; }
+  .menu a { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:10px; color:var(--ink2); font-weight:600; font-size:14px; }
+  .menu a:hover { background:var(--brand-ll); text-decoration:none; }
+  .tabs-bottom { display:none; }
+
+  /* ---------- layout ---------- */
+  main { max-width:1080px; margin:0 auto; padding:24px 18px 48px; }
+  h1 { font-size:26px; line-height:1.2; letter-spacing:-.02em; margin:4px 0 6px; }
+  h2 { font-size:18px; letter-spacing:-.01em; margin:26px 0 12px; } h3 { font-size:15px; margin:14px 0 8px; }
+  .sub { color:var(--muted); margin:0 0 18px; }
+  .head { display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:6px; } .head > div:first-child { flex:1; min-width:220px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--r); padding:20px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .card h2:first-child, .card h3:first-child { margin-top:0; }
+  .note { display:flex; gap:10px; background:var(--warn-l); border:1px solid #fde68a; color:#78350f; border-radius:var(--r-sm); padding:12px 14px; font-size:13.5px; margin:12px 0 16px; }
+  .note.info { background:var(--brand-ll); border-color:#dfe3ff; color:#312e81; }
+  .muted { color:var(--muted); } .small { font-size:13px; } .tiny { font-size:12px; }
+  .err { color:var(--bad); font-size:13.5px; min-height:20px; margin-top:10px; font-weight:500; } .okmsg { color:var(--ok); font-size:13.5px; margin-top:10px; font-weight:600; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:0 16px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:0 16px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:16px; align-items:center; }
+  .hidden { display:none !important; }
+
+  /* ---------- controls ---------- */
+  button, .btn { font-family:inherit; font-size:14px; border-radius:12px; padding:10px 18px; cursor:pointer; border:1px solid var(--brand); background:var(--brand);
+                 color:#fff; font-weight:700; display:inline-flex; align-items:center; justify-content:center; gap:8px; line-height:1.2; transition:background .15s, transform .05s; text-decoration:none !important; }
+  button:hover, .btn:hover { background:var(--brand-d); } button:active, .btn:active { transform:scale(.98); }
+  button.sec, .btn.sec { background:#fff; color:var(--ink); border-color:var(--line); } button.sec:hover, .btn.sec:hover { background:var(--brand-ll); }
+  button.ghost, .btn.ghost { background:var(--brand-ll); color:var(--brand-d); border-color:transparent; } button.ghost:hover, .btn.ghost:hover { background:var(--brand-l); }
+  button.danger { background:#fff; color:var(--bad); border-color:#fecaca; } button.danger:hover { background:var(--bad-l); }
+  button.big, .btn.big { padding:14px 20px; font-size:15px; border-radius:14px; width:100%; }
+  button.sm, .btn.sm { padding:7px 12px; font-size:13px; border-radius:10px; }
+  button.link { background:none; border:none; color:var(--brand); padding:4px; font-weight:600; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  .face-btn { background:var(--grad); border:none; box-shadow:0 8px 24px rgba(79,70,229,.35); } .face-btn:hover { filter:brightness(1.05); background:var(--grad); }
+  label { display:block; font-size:13.5px; font-weight:600; margin:14px 0 6px; color:var(--ink2); }
+  input, select, textarea { width:100%; padding:12px 14px; border:1.5px solid var(--line); border-radius:12px; font-size:15px; font-family:inherit; background:#fff; color:var(--ink); transition:border .15s, box-shadow .15s; }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 4px rgba(79,70,229,.12); }
+  textarea { min-height:96px; resize:vertical; }
+  .pw { position:relative; } .pw input { padding-right:64px; } .pw button { position:absolute; right:6px; top:50%; transform:translateY(-50%); }
+
+  /* ---------- sign in ---------- */
+  .auth-wrap { min-height:calc(100vh - 140px); display:grid; grid-template-columns:1.05fr 1fr; gap:28px; align-items:center; max-width:980px; margin:0 auto; }
+  .auth-hero { background:var(--grad); color:#fff; border-radius:24px; padding:40px 36px; position:relative; overflow:hidden; box-shadow:var(--shadow-lg); }
+  .auth-hero:after { content:''; position:absolute; width:320px; height:320px; right:-110px; bottom:-130px; border-radius:50%; background:rgba(255,255,255,.12); }
+  .auth-hero h1 { font-size:34px; margin:18px 0 10px; } .auth-hero p { opacity:.92; margin:0 0 18px; font-size:15.5px; }
+  .auth-hero ul { list-style:none; padding:0; margin:0; } .auth-hero li { display:flex; gap:10px; align-items:center; margin:10px 0; font-weight:600; }
+  .auth-hero li span { width:30px; height:30px; border-radius:9px; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; }
+  .auth-hero li svg.i { stroke:#fff; width:17px; height:17px; }
+  .auth-card { padding:28px; }
+  .seg { display:flex; background:var(--bg); border-radius:12px; padding:4px; margin:4px 0 6px; }
+  .seg button { flex:1; background:transparent; color:var(--muted); border:none; padding:9px; border-radius:9px; }
+  .seg button.on { background:#fff; color:var(--ink); box-shadow:0 1px 4px rgba(15,23,42,.1); }
+  .or { display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px; font-weight:600; margin:18px 0 4px; }
+  .or:before, .or:after { content:''; flex:1; height:1px; background:var(--line); }
+  .welcome { text-align:center; padding:8px 0 4px; }
+  .face-ico { width:84px; height:84px; margin:6px auto 14px; border-radius:26px; background:var(--brand-l); display:flex; align-items:center; justify-content:center; color:var(--brand); }
+  .face-ico svg.i { width:46px; height:46px; stroke-width:1.6; }
+
+  /* ---------- camera selfie scan (face recognition circle) ---------- */
+  .fr-card { max-width:440px; margin:0 auto; background:#fff; border-radius:24px; box-shadow:var(--shadow-lg); overflow:hidden; text-align:center; }
+  .fr-bar { display:flex; align-items:center; gap:10px; background:#1d4ed8; color:#fff; padding:14px 16px; font-weight:700; font-size:16px; text-align:left; }
+  .fr-bar a { color:#fff; display:flex; } .fr-bar svg.i { stroke:#fff; }
+  .fr-body { padding:26px 22px 22px; }
+  .fr-body h1 { font-size:21px; margin:0 0 4px; } .fr-body .sub { margin:0 0 18px; font-size:14px; }
+  .scan-wrap { --p:0; width:250px; height:250px; margin:0 auto 18px; padding:7px; border-radius:50%;
+               background:conic-gradient(#1d4ed8 calc(var(--p) * 1%), #dbeafe 0); box-shadow:0 10px 30px rgba(29,78,216,.18); }
+  .scan { position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden; background:#eef2ff; border:5px solid #fff;
+          -webkit-mask-image:-webkit-radial-gradient(white, black); }
+  .scan video { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block; background:#eef2ff; }
+  .scan-line { position:absolute; left:12%; right:12%; height:2px; top:18%; border-radius:2px; background:linear-gradient(90deg,transparent,#60a5fa,transparent);
+               box-shadow:0 0 10px #60a5fa; animation:scanline 2.4s ease-in-out infinite; }
+  @keyframes scanline { 0%, 100% { top:18%; } 50% { top:80%; } }
+  .scan-idle { position:absolute; top:0; right:0; bottom:0; left:0; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; color:#1d4ed8; font-size:13px; font-weight:600; }
+  .scan-idle svg.i { width:84px; height:84px; stroke-width:1.2; }
+  .scan-check { position:absolute; top:0; right:0; bottom:0; left:0; display:flex; align-items:center; justify-content:center; background:rgba(5,150,105,.82); animation:fade .25s; }
+  .check-anim { width:110px; height:110px; }
+  .check-anim circle { fill:none; stroke:#fff; stroke-width:5; stroke-dasharray:302; stroke-dashoffset:302; animation:draw .5s ease-out forwards; }
+  .check-anim path { fill:none; stroke:#fff; stroke-width:7; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:80; stroke-dashoffset:80; animation:draw .35s .45s ease-out forwards; }
+  .check-anim.green circle { stroke:var(--ok); } .check-anim.green path { stroke:var(--ok); }
+  @keyframes draw { to { stroke-dashoffset:0; } }
+  .fr-tip { font-size:14.5px; color:var(--ink2); margin:0 0 6px; }
+  .scan-msg { font-weight:700; font-size:16px; min-height:24px; color:#1d4ed8; margin-bottom:16px; }
+  .scan-msg.warn { color:var(--warn); }
+  .fr-btn { width:100%; border-radius:999px; background:#1d4ed8; border-color:#1d4ed8; padding:14px 20px; font-size:15px; }
+  .fr-btn:hover { background:#1e40af; }
+  .fr-foot { font-size:12.5px; color:var(--muted); margin-top:14px; }
+  .verified-card { display:flex; align-items:center; gap:14px; text-align:left; background:var(--ok-l); border:1px solid #a7f3d0; border-radius:16px; padding:14px; margin:14px 0 6px; }
+  .verified-card .nm { font-weight:800; font-size:17px; } .verified-card .sm { font-size:13px; color:var(--ink2); }
+  .vpill { display:inline-flex; align-items:center; gap:5px; background:var(--ok); color:#fff; font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; }
+  .vpill svg.i { width:14px; height:14px; stroke-width:3; }
+  .hero .vpill { background:rgba(255,255,255,.22); }
+  .hero .who { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:center; font-size:13px; opacity:.95; margin:0 0 12px; }
+  @media (max-width: 760px) { .scan-wrap { width:230px; height:230px; } .fr-card { border-radius:20px; } }
+
+  /* ---------- "Login Authentication" page: full screen, blue header, face circle ---------- */
+  .fa-page { position:fixed; top:0; right:0; bottom:0; left:0; z-index:45; background:#fff; overflow-y:auto; -webkit-overflow-scrolling:touch; display:flex; flex-direction:column; }
+  .fa-bar { position:relative; flex:none; background:#2563eb; color:#fff; text-align:center; font-weight:700; font-size:22px; letter-spacing:-.01em;
+            padding:calc(18px + env(safe-area-inset-top)) 56px 18px; }
+  .fa-bar a { position:absolute; left:10px; bottom:13px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:50%; color:#fff; }
+  .fa-bar a:hover { background:rgba(255,255,255,.15); text-decoration:none; }
+  .fa-bar svg.i { stroke:#fff; }
+  .fa-body { flex:1; width:100%; max-width:460px; margin:0 auto; padding:40px 22px calc(24px + env(safe-area-inset-bottom)); text-align:center; }
+  .fa-page #fsBody { width:100%; }
+  .fa-page .scan-msg { font-size:19px; font-weight:500; color:var(--ink); min-height:28px; margin:0 0 26px; }
+  .fa-page .scan-msg.warn { color:#b45309; font-weight:600; }
+  .fa-page .scan-wrap { width:min(76vw, 300px); height:min(76vw, 300px); padding:7px; margin:0 auto 40px;
+                        background:conic-gradient(#16a34a calc(var(--p) * 1%), #1d4ed8 0); box-shadow:none; }
+  .fa-page .scan { border:6px solid #fff; background:#e8eefc; }
+  .fa-page .scan-line { display:none !important; }
+  .scan-grid { position:absolute; top:0; right:0; bottom:0; left:0; pointer-events:none;
+    background:
+      linear-gradient(to right, transparent calc(33.33% - 1px), rgba(255,255,255,.6) calc(33.33% - 1px), rgba(255,255,255,.6) 33.33%, transparent 33.33%,
+                      transparent calc(66.66% - 1px), rgba(255,255,255,.6) calc(66.66% - 1px), rgba(255,255,255,.6) 66.66%, transparent 66.66%),
+      linear-gradient(to bottom, transparent calc(33.33% - 1px), rgba(255,255,255,.6) calc(33.33% - 1px), rgba(255,255,255,.6) 33.33%, transparent 33.33%,
+                      transparent calc(66.66% - 1px), rgba(255,255,255,.6) calc(66.66% - 1px), rgba(255,255,255,.6) 66.66%, transparent 66.66%); }
+  .fa-tips { font-size:15px; line-height:1.65; color:var(--ink2); margin:0 0 22px; }
+  .fa-page .fr-btn { max-width:320px; margin:0 auto; background:#2563eb; border-color:#2563eb; }
+  .fa-foot { font-size:12.5px; color:var(--muted); margin:18px 0 0; }
+  .fa-page .note { text-align:left; }
+
+  /* ---------- home ---------- */
+  .hero { background:var(--grad); color:#fff; border-radius:22px; padding:24px; display:flex; align-items:center; gap:22px; box-shadow:var(--shadow-lg); margin-bottom:18px; position:relative; overflow:hidden; }
+  .hero:after { content:''; position:absolute; width:260px; height:260px; right:-80px; top:-120px; border-radius:50%; background:rgba(255,255,255,.1); }
+  .hero h1 { color:#fff; margin:0 0 4px; } .hero p { margin:0 0 14px; opacity:.92; }
+  .hero .btn { background:#fff; color:var(--brand-d); border-color:#fff; } .hero .btn:hover { background:#eef2ff; }
+  .ring { width:104px; height:104px; flex:none; position:relative; z-index:1; }
+  .ring svg { width:104px; height:104px; transform:rotate(-90deg); }
+  .ring .lbl { position:absolute; top:0; right:0; bottom:0; left:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-weight:800; font-size:24px; line-height:1; }
+  .ring .lbl small { font-size:11px; font-weight:600; opacity:.85; margin-top:4px; }
+  .steps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .step { display:flex; align-items:center; gap:12px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; cursor:pointer; box-shadow:var(--shadow); transition:transform .1s, border-color .15s; }
+  .step:hover { border-color:#c7cdfc; transform:translateY(-1px); }
+  .step .ic { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--brand-l); color:var(--brand); flex:none; }
+  .step.done .ic { background:var(--ok-l); color:var(--ok); }
+  .step .t { font-weight:700; } .step .s { font-size:12.5px; color:var(--muted); }
+  .step.done .s { color:var(--ok); font-weight:600; }
+
+  /* ---------- chips, pills, badges ---------- */
+  .pill { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; font-size:12.5px; font-weight:700; background:#eef1f6; color:var(--ink2); }
+  .pill.Endorsed { background:var(--ok-l); color:var(--ok); } .pill.Needs { background:var(--warn-l); color:var(--warn); } .pill.Pending { background:#eef1f6; color:var(--muted); }
+  .badge { display:inline-block; border-radius:999px; padding:2px 9px; font-size:11.5px; font-weight:700; }
+  .b-High { color:var(--ok); background:var(--ok-l); } .b-Moderate { color:var(--warn); background:var(--warn-l); } .b-Low { color:var(--bad); background:var(--bad-l); }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; }
+  .chip { display:inline-block; background:#f1f4f9; color:var(--ink2); border-radius:8px; padding:3px 8px; font-size:11.5px; font-weight:600; }
+  .chip.hl { background:var(--brand); color:#fff; }
+  .chip.near { background:var(--accent-l); color:var(--accent); }
+  .pick { display:flex; gap:8px; flex-wrap:wrap; margin:6px 0 12px; }
+  .pick button { background:#fff; color:var(--ink2); border:1.5px solid var(--line); padding:8px 14px; border-radius:999px; font-size:13px; }
+  .pick button.on { background:var(--brand); color:#fff; border-color:var(--brand); }
+  .pick button .star { color:#f59e0b; }
+  .pick button.on .star { color:#fde68a; }
+
+  /* ---------- recommendation cards ---------- */
+  .rec { position:relative; padding-top:22px; }
+  .rec-top { display:flex; align-items:center; gap:14px; }
+  .rank { width:42px; height:42px; border-radius:13px; background:var(--brand-l); color:var(--brand-d); font-weight:800; display:flex; align-items:center; justify-content:center; flex:none; font-size:16px; }
+  .rec:first-of-type .rank, .rank.gold { background:linear-gradient(135deg,#f59e0b,#f97316); color:#fff; }
+  .rec-top .t { flex:1; font-weight:800; font-size:17px; letter-spacing:-.01em; } .rec-top .t small { display:block; font-weight:600; font-size:12.5px; color:var(--muted); letter-spacing:0; }
+  .score { text-align:right; } .score b { font-size:28px; font-weight:800; line-height:1; color:var(--brand-d); } .score small { display:block; font-size:11px; color:var(--muted); font-weight:600; }
+  .bar { height:8px; background:#edf0f6; border-radius:999px; overflow:hidden; margin:14px 0; } .bar > div { height:100%; border-radius:999px; background:var(--grad); }
+  .tiles { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+  .tile { background:var(--bg); border-radius:12px; padding:10px; font-size:12px; color:var(--ink2); }
+  .tile .v { font-weight:800; font-size:15px; color:var(--ink); margin-left:4px; }
+  ul.reasons { margin:14px 0 6px; padding:0; list-style:none; } ul.reasons li { display:flex; gap:8px; margin:6px 0; font-size:14px; }
+  ul.reasons li:before { content:'✓'; color:var(--ok); font-weight:800; }
+  .persist { font-size:12.5px; color:var(--muted); background:var(--bg); border-radius:10px; padding:10px 12px; margin:10px 0 4px; }
+  .endorsed { border:2px solid #a7f3d0; background:linear-gradient(180deg,#f0fdf9,#fff 120px); }
+  .endorsed .tag { display:inline-flex; align-items:center; gap:6px; background:var(--ok); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:999px; margin-bottom:8px; }
+  .allrow { display:grid; grid-template-columns:1.2fr 1fr 44px; gap:12px; align-items:center; padding:9px 2px; border-bottom:1px solid var(--line); font-size:14px; }
+  .allrow:last-child { border-bottom:0; } .allrow .bar { margin:0; }
+
+  /* ---------- schools ---------- */
+  .locbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:#fff; border:1px solid var(--line); border-radius:14px; padding:10px 12px; margin:6px 0 16px; box-shadow:var(--shadow); }
+  .locbar .where { flex:1; min-width:180px; display:flex; align-items:center; gap:8px; font-size:14px; }
+  .locbar .where svg.i { color:var(--accent); }
+  .locbar select { width:auto; padding:8px 10px; font-size:13px; border-radius:10px; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+  .stat { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow); }
+  .stat b { display:block; font-size:24px; font-weight:800; letter-spacing:-.02em; } .stat span { font-size:12.5px; color:var(--muted); font-weight:600; }
+  .school-list { display:grid; gap:10px; }
+  .school { background:#fff; border:1px solid var(--line); border-radius:14px; padding:14px; }
+  .card .school { box-shadow:none; background:var(--brand-ll); border-color:transparent; }
+  .sch-top { display:flex; gap:12px; align-items:flex-start; }
+  .sch-ico { width:40px; height:40px; border-radius:12px; background:var(--accent-l); color:var(--accent); display:flex; align-items:center; justify-content:center; flex:none; }
+  .sch-main { flex:1; min-width:0; } .sch-name { font-weight:700; } .sch-sub { font-size:13px; color:var(--muted); }
+  .dist { text-align:right; font-weight:800; white-space:nowrap; } .dist small { display:block; font-size:11px; color:var(--muted); font-weight:600; }
+  .sch-body { margin:10px 0 0 52px; }
+  .sch-note { font-size:12.5px; color:var(--muted); margin-top:8px; }
+  .sch-actions { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .mapbox { margin:10px 0 0; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+  .mapbox iframe { width:100%; height:240px; border:0; display:block; }
+  .more { width:100%; margin-top:8px; }
+
+  /* ---------- forms for tests ---------- */
+  .progress-sticky { position:sticky; top:61px; z-index:10; background:rgba(244,246,251,.94); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); padding:10px 0; margin-bottom:6px; }
+  .progress-sticky .row { display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:var(--ink2); margin-bottom:6px; }
+  .q { background:#fff; border:1px solid var(--line); border-radius:var(--r); padding:16px; margin-bottom:12px; box-shadow:var(--shadow); }
+  .q .meta { font-size:12px; font-weight:700; color:var(--brand); text-transform:uppercase; letter-spacing:.04em; }
+  .q .stem { font-weight:700; margin:4px 0 10px; font-size:15.5px; }
+  .opt { display:flex; gap:12px; align-items:center; padding:12px; border:1.5px solid var(--line); border-radius:12px; margin:8px 0 0; cursor:pointer; font-weight:500; transition:border-color .12s, background .12s; }
+  .opt:hover { border-color:#c7cdfc; }
+  .opt input { position:absolute; opacity:0; width:1px; height:1px; }
+  .opt .L { width:30px; height:30px; border-radius:9px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; color:var(--ink2); }
+  .opt.sel { border-color:var(--brand); background:var(--brand-ll); } .opt.sel .L { background:var(--brand); color:#fff; }
+  .rate { display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-width:360px; }
+  .rate label { margin:0; display:flex; align-items:center; justify-content:center; height:44px; border:1.5px solid var(--line); border-radius:12px; cursor:pointer; font-weight:700; font-size:15px; color:var(--ink2); }
+  .rate input { position:absolute; opacity:0; width:1px; height:1px; }
+  .rate label.sel { background:var(--brand); border-color:var(--brand); color:#fff; }
+  .skill { padding:14px 0; border-bottom:1px solid var(--line); } .skill:last-of-type { border-bottom:0; }
+  .skill .nm { font-weight:700; margin-bottom:8px; }
+  .scale { display:flex; justify-content:space-between; max-width:360px; font-size:11.5px; color:var(--muted); margin-top:4px; }
+
+  /* ---------- tables, misc ---------- */
+  table { width:100%; border-collapse:collapse; } th, td { text-align:left; padding:12px; border-bottom:1px solid var(--line); vertical-align:middle; font-size:14px; }
+  th { background:var(--bg); font-weight:700; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  tr.click { cursor:pointer; } tr.click:hover td { background:var(--brand-ll); }
+  .avatar { width:32px; height:32px; border-radius:50%; object-fit:cover; background:var(--brand-l); color:var(--brand-d);
+            display:inline-flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; vertical-align:middle; flex:none; }
+  .avatar.lg { width:96px; height:96px; font-size:32px; } .avatar.md { width:48px; height:48px; font-size:17px; } .avatar.xl { width:72px; height:72px; font-size:24px; }
+  .photo-card { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  .device { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .device:last-child { border-bottom:0; } .device .ic { width:40px; height:40px; border-radius:12px; background:var(--brand-l); color:var(--brand); display:flex; align-items:center; justify-content:center; }
+  .device .t { flex:1; } .device .t b { display:block; }
+  .news-item .when { font-size:12.5px; color:var(--muted); }
+  .empty { text-align:center; padding:36px 16px; color:var(--muted); }
+  .empty svg.i { width:40px; height:40px; color:#c3c9d6; margin-bottom:8px; }
+
+  /* ---------- overlays ---------- */
+  .spinner { position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(244,246,251,.7); backdrop-filter:blur(2px); display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center; font-weight:700; color:var(--brand-d); z-index:60; }
+  .spinner:before { content:''; width:42px; height:42px; border-radius:50%; border:4px solid var(--brand-l); border-top-color:var(--brand); animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .sheet-bg { position:fixed; top:0; right:0; bottom:0; left:0; background:rgba(15,23,42,.45); z-index:50; display:flex; align-items:center; justify-content:center; padding:16px; animation:fade .15s; }
+  .sheet { background:#fff; border-radius:22px; padding:26px; max-width:420px; width:100%; box-shadow:var(--shadow-lg); text-align:center; animation:pop .18s; }
+  .sheet h2 { margin:0 0 8px; } .sheet p { color:var(--muted); margin:0 0 6px; }
+  @keyframes fade { from { opacity:0; } } @keyframes pop { from { transform:translateY(12px) scale(.98); opacity:0; } }
+  .toast { position:fixed; left:50%; bottom:28px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:12px 18px; border-radius:12px; font-weight:600; font-size:14px; z-index:70; box-shadow:var(--shadow-lg); max-width:calc(100% - 32px); animation:pop .18s; }
+  footer { text-align:center; font-size:12px; color:var(--muted); padding:8px 16px 28px; }
+
+  /* ---------- phones ---------- */
+  @media (max-width: 760px) {
+    body { font-size:15px; }
+    .nav { display:none; }
+    .me-name { display:none; } .me-btn { padding:3px; border:none; }
+    .top-in { padding:8px 14px; min-height:56px; justify-content:space-between; }
+    .tabs-bottom { display:flex; position:fixed; left:0; right:0; bottom:0; z-index:30; background:rgba(255,255,255,.96); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+                   border-top:1px solid var(--line); padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+    .tabs-bottom a { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; font-size:11px; font-weight:700; color:var(--muted); padding:6px 0; border-radius:12px; position:relative; }
+    .tabs-bottom a:hover { text-decoration:none; }
+    .tabs-bottom a.on { color:var(--brand); } .tabs-bottom a.on svg.i { stroke-width:2.4; }
+    .tabs-bottom .dot { top:0; right:calc(50% - 22px); }
+    main { padding:16px 14px calc(96px + env(safe-area-inset-bottom)); }
+    footer { padding-bottom:calc(90px + env(safe-area-inset-bottom)); }
+    h1 { font-size:23px; }
+    .auth-wrap { grid-template-columns:1fr; gap:16px; min-height:0; }
+    .auth-hero { padding:24px 22px; border-radius:20px; } .auth-hero h1 { font-size:25px; margin:12px 0 6px; } .auth-hero ul { display:none; } .auth-hero p { margin:0; font-size:14.5px; }
+    .auth-card { padding:22px; }
+    .hero { padding:20px; gap:16px; } .ring, .ring svg { width:84px; height:84px; } .ring .lbl { font-size:20px; }
+    .steps-grid { grid-template-columns:1fr; }
+    .tiles { grid-template-columns:repeat(2,1fr); }
+    .grid2, .grid3 { grid-template-columns:1fr; }
+    .stats { grid-template-columns:repeat(3,1fr); gap:8px; } .stat { padding:10px; } .stat b { font-size:20px; } .stat span { font-size:11px; }
+    .sch-body { margin-left:0; }
+    .allrow { grid-template-columns:1fr 70px 38px; }
+    .score b { font-size:24px; }
+    th.hide-m, td.hide-m { display:none; }
+    .progress-sticky { top:57px; }
+    .toast { bottom:calc(84px + env(safe-area-inset-bottom)); }
+    .card { padding:16px; }
+    .head .actions { width:100%; } .head .actions button { flex:1; }
+  }
+  @media print {
+    .top, .tabs-bottom, .actions, .noprint, footer, .locbar, .sch-actions { display:none !important; }
+    body { background:#fff; } main { max-width:none; padding:0; } .card { break-inside:avoid; box-shadow:none; }
+    .hero, .auth-hero { box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+<header class="top noprint" id="top"></header>
+<main id="app"><div class="card muted">Loading CourseMatch…</div></main>
+<nav class="tabs-bottom noprint" id="tabs"></nav>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.4 login authentication</span></footer>
+<div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
+<div id="sheet"></div>
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   SETTINGS FOR THE HOSTED COPY (only used when this file runs outside Apps Script,
+   e.g. on GitHub Pages for face sign-in). Paste your web app's /exec address here.
+   ===================================================================== */
+var API_URL = 'https://script.google.com/macros/s/AKfycbwyMEG9TQZBYawZDwjBlWTyiMXIkin8Tw9w7SerQgHnzHrqWBQy5CIXywvS5VFVoDgB/exec';
+
+var CFG = null, TOKEN = null, USER = null, REC = null, UNREAD = 0, PAGE = 'home', PHOTO = '', EMAIL = '', PENDING = null;
+var CS = { list: [], filter: 'ALL', search: '', student: null };   // counselor state
+var SCH = { code: '', nearbyOnly: false };                          // schools page state
+var SHOWALL = {}, REDRAW = null, LOC = null;
+var FACE = { api: false, here: false, ready: false, pre: null, reg: null, label: 'face or fingerprint' };
+var IN_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+var LETTERS = ['A', 'B', 'C', 'D'];
+var STEP_KEYS = [['profile', 'Profile', 'profile', 'user', 'School, strand and course choices'],
+                 ['grades', 'Grades', 'grades', 'book', 'From your Form 138'],
+                 ['exam', 'Examination', 'exam', 'pencil', '32 short questions'],
+                 ['skills', 'Skills', 'skills', 'bolt', 'Rate 12 skills'],
+                 ['personality', 'Personality', 'personality', 'heart', '20 quick choices']];
+
+// ------------------------------------------------------------ icons
+var ICONS = {
+  home: '<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M10 20v-5h4v5"/>',
+  steps: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  star: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  school: '<path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/><path d="M22 9v6"/>',
+  bell: '<path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.3-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.2 2.5 3.5 5.2"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5"/>',
+  book: '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20"/>',
+  pencil: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/>',
+  bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  heart: '<path d="M12 20s-7-4.4-9-9a5 5 0 0 1 9-3 5 5 0 0 1 9 3c-2 4.6-9 9-9 9z"/>',
+  pin: '<path d="M12 21s-7-6.1-7-11.5a7 7 0 0 1 14 0C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  nav: '<path d="m3 11 18-8-8 18-2-8z"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/>',
+  map: '<path d="m9 4-6 3v13l6-3 6 3 6-3V4l-6 3z"/><path d="M9 4v13M15 7v13"/>',
+  face: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1"/><path d="M12 9.5V13h-1"/><path d="M9.5 16c1.4 1 3.6 1 5 0"/>',
+  finger: '<path d="M12 11v3a8 8 0 0 1-1.5 4.5"/><path d="M8.5 8.5A4.5 4.5 0 0 1 16.5 11v2a12 12 0 0 1-.8 4.5"/><path d="M5.5 7a8 8 0 0 1 14 4v1.5"/><path d="M7.5 12v1.5a8 8 0 0 1-1 3.8"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  logout: '<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 17l-5-5 5-5M5 12h11"/>',
+  file: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/>',
+  check: '<path d="m5 12 5 5L20 7"/>',
+  arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
+  back: '<path d="M19 12H5M11 6l-6 6 6 6"/>',
+  phone: '<rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/>',
+  laptop: '<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20"/>',
+  cap: '<path d="M2 9 12 4l10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.9-3.5M4 4v4h4M4 13a8 8 0 0 0 14.9 3.5M20 20v-4h-4"/>',
+  download: '<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>',
+  print: '<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/>',
+  shield: '<path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>'
+};
+function icon(n, cls) { return '<svg class="i' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[n] || '') + '</svg>'; }
+
+// ------------------------------------------------------------ helpers
+function esc(v) { return String(v === null || v === undefined ? '' : v).replace(/[&<>"']/g, function (c) {
+  return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function $(id) { return document.getElementById(id); }
+function val(id) { var el = $(id); return el ? String(el.value).trim() : ''; }
+function busy(on, msg) { $('spinner').classList.toggle('hidden', !on); $('spinMsg').textContent = msg || 'Please wait…'; }
+function render(html) { REDRAW = null; camStop(); $('app').innerHTML = html; window.scrollTo(0, 0); }
+function setErr(msg, id) { var el = $(id || 'err'); if (el) { el.className = 'err'; el.textContent = msg; } }
+function setOk(msg, id) { var el = $(id || 'err'); if (el) { el.className = 'okmsg'; el.textContent = msg; } }
+function toast(msg) { var t = $('toast'); t.innerHTML = '<div class="toast">' + esc(msg) + '</div>'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.innerHTML = ''; }, 3600); }
+function fmtDate(iso) { if (!iso) return ''; var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleString(); }
+function fmtDay(iso) { if (!iso) return ''; var d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }); }
+function progName(code) { var p = (CFG.programs || []).filter(function (x) { return x.code === code; })[0]; return p ? p.name : code; }
+function signed(n) { return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(4); }
+function store(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { /* storage blocked */ } }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function loadJson(k) { try { return JSON.parse(load(k) || 'null'); } catch (e) { return null; } }
+function sheet(html) { $('sheet').innerHTML = html ? '<div class="sheet-bg" onclick="if(event.target===this)sheet()"><div class="sheet">' + html + '</div></div>' : ''; }
+
+function initials(name) {
+  var parts = String(name || '?').trim().split(/\s+/);
+  return esc(((parts[0] || '?').charAt(0) + (parts.length > 1 ? parts[parts.length - 1].charAt(0) : '')).toUpperCase());
+}
+function avatar(photo, name, size) {
+  var cls = 'avatar' + (size ? ' ' + size : '');
+  return /^data:image\/(jpeg|png|webp);base64,/.test(photo || '')
+    ? '<img class="' + cls + '" src="' + esc(photo) + '" alt="Profile picture of ' + esc(name) + '">'
+    : '<span class="' + cls + '" aria-hidden="true">' + initials(name) + '</span>';
+}
+
+/** Calls the server. Inside Apps Script it uses google.script.run; on the hosted page it uses fetch. */
+function api(action, data) {
+  if (IN_GAS) {
+    return new Promise(function (resolve, reject) {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) {
+        reject(new Error(e && e.message ? e.message : String(e)));
+      }).api(TOKEN, action, data || {});
+    });
+  }
+  return fetch(API_URL, { method: 'POST', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                          body: JSON.stringify({ token: TOKEN, action: action, data: data || {} }) })
+    .then(function (r) { return r.json(); }, function () { throw new Error('No internet connection. Please try again.'); })
+    .then(function (j) { if (!j || !j.ok) throw new Error(j && j.error ? j.error : 'Something went wrong.'); return j.result; });
+}
+function fail(e, id) {
+  busy(false);
+  var msg = e && e.message ? e.message : String(e);
+  if (msg.indexOf('SESSION_EXPIRED') !== -1) { signOutLocal(); showAuth('login', msg.replace(/^.*SESSION_EXPIRED:\s*/, '')); return; }
+  if (msg.indexOf('APP_MOVED') !== -1) { signOutLocal(); if (CFG && CFG.appUrl) return showLauncher(); }
+  if (msg.indexOf('FACE_REQUIRED') !== -1 && verifyReady()) { PENDING = PENDING || USER; if (PENDING) { USER = null; drawTop(); return faceStep('verify'); } }
+  if ($(id || 'err')) setErr(msg, id); else toast(msg);
+}
+
+// ------------------------------------------------------------ location + distances
+function km(a, b) {
+  if (!a || !b) return null;
+  var R = 6371, r = Math.PI / 180, dLat = (b[0] - a[0]) * r, dLng = (b[1] - a[1]) * r;
+  var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)) * 10) / 10;
+}
+function townPoint(town) { var c = town && CFG.townCoords[town]; return c ? { lat: c[0], lng: c[1], label: town, town: town, mode: 'town' } : null; }
+function nearestTown(lat, lng) {
+  var best = null;
+  Object.keys(CFG.townCoords).forEach(function (t) { var d = km([lat, lng], CFG.townCoords[t]); if (best === null || d < best.d) best = { t: t, d: d }; });
+  return best ? best.t : '';
+}
+/** Where distances are measured from: saved choice, else the student's school town, else Dumaguete. */
+function myOrigin() {
+  if (LOC && (LOC.mode === 'gps' || townPoint(LOC.town))) return LOC;
+  return townPoint(REC && REC.profile ? REC.profile.town : '') || townPoint('Dumaguete City');
+}
+function originText(o) { return o.mode === 'gps' ? 'your current location' + (o.near ? ' (near ' + o.near + ')' : '') : o.town; }
+function useGps() {
+  if (!navigator.geolocation) return toast('Location is not available on this device. Choose your town instead.');
+  busy(true, 'Finding your location…');
+  navigator.geolocation.getCurrentPosition(function (p) {
+    busy(false);
+    LOC = { mode: 'gps', lat: p.coords.latitude, lng: p.coords.longitude, near: nearestTown(p.coords.latitude, p.coords.longitude), at: Date.now() };
+    store('cm_loc', JSON.stringify(LOC));
+    if (km([LOC.lat, LOC.lng], CFG.townCoords[LOC.near]) > 60) toast('You seem to be outside Negros Oriental. Distances may be large.');
+    if (REDRAW) REDRAW();
+  }, function (err) {
+    busy(false);
+    toast(err && err.code === 1 ? 'Location permission was turned off. Choose your town instead.' : 'Could not find your location. Choose your town instead.');
+  }, { enableHighAccuracy: false, timeout: 15000, maximumAge: 600000 });
+}
+function setTown(t) { if (!t) return; LOC = { mode: 'town', town: t }; store('cm_loc', JSON.stringify(LOC)); if (REDRAW) REDRAW(); }
+function locBar(o) {
+  return '<div class="locbar noprint"><div class="where">' + icon('pin') + '<span>Distances from <b>' + esc(originText(o)) + '</b></span></div>' +
+    '<button class="ghost sm" onclick="useGps()">' + icon('nav') + ' Use my location</button>' +
+    '<select aria-label="Choose a town" onchange="setTown(this.value)"><option value="">Choose a town…</option>' +
+    CFG.towns.map(function (t) { return '<option' + (o.mode === 'town' && o.town === t ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('') +
+    '</select></div>';
+}
+/** All schools offering a program (or all schools if code is empty), nearest first. */
+function schoolsFor(code, o) {
+  var from = o ? (o.mode === 'gps' ? [o.lat, o.lng] : CFG.townCoords[o.town]) : null;
+  return (CFG.schools || []).filter(function (s) { return !code || s.programs.indexOf(code) !== -1; }).map(function (s) {
+    return { name: s.name, campus: s.campus, town: s.town, website: s.website, programs: s.programs, note: s.note, km: km(from, CFG.townCoords[s.town]) };
+  }).sort(function (a, b) { return (a.km === null ? 9999 : a.km) - (b.km === null ? 9999 : b.km) || a.name.localeCompare(b.name); });
+}
+function mapQuery(s) { return s.name + (s.campus ? ' ' + s.campus : '') + ', ' + s.town + ', Negros Oriental, Philippines'; }
+function schoolCard(s, code, o) {
+  var q = encodeURIComponent(mapQuery(s));
+  var origin = o ? (o.mode === 'gps' ? o.lat + ',' + o.lng : o.town + ', Negros Oriental, Philippines') : '';
+  var near = s.km !== null && s.km <= CFG.nearbyKm;
+  return '<div class="school"><div class="sch-top"><div class="sch-ico">' + icon('school') + '</div><div class="sch-main">' +
+    '<div class="sch-name">' + esc(s.name) + '</div><div class="sch-sub">' + (s.campus ? esc(s.campus) + ' · ' : '') + esc(s.town) + '</div></div>' +
+    '<div class="dist">' + (s.km === null ? '–' : (s.km < 1 ? 'Same town' : '~' + Math.round(s.km) + ' km')) + '<small>' + (near ? '<span class="chip near">Nearby</span>' : 'away') + '</small></div></div>' +
+    '<div class="sch-body"><div class="chips">' + (s.programs.length ? s.programs.map(function (p) {
+      return '<span class="chip' + (p === code ? ' hl' : '') + '" title="' + esc(progName(p)) + '">' + esc(p) + '</span>'; }).join('') :
+      '<span class="chip">Programs not listed yet: ask the school</span>') + '</div>' +
+    (s.note ? '<div class="sch-note">ⓘ ' + esc(s.note) + '</div>' : '') +
+    '<div class="sch-actions noprint">' + (s.website ? '<a class="btn sec sm" href="' + esc(s.website) + '" target="_blank" rel="noopener">' + icon('globe') + 'Website</a>' : '') +
+    '<a class="btn sec sm" href="https://www.google.com/maps/search/?api=1&query=' + q + '" target="_blank" rel="noopener">' + icon('pin') + 'Map</a>' +
+    '<a class="btn sec sm" href="https://www.google.com/maps/dir/?api=1&destination=' + q + (origin ? '&origin=' + encodeURIComponent(origin) : '') + '" target="_blank" rel="noopener">' + icon('nav') + 'Directions</a>' +
+    '<button class="ghost sm" data-embed="' + esc('https://maps.google.com/maps?q=' + q + '&z=15&output=embed') + '" onclick="toggleMap(this)">' + icon('map') + 'Show map</button></div></div></div>';
+}
+function schoolList(code, o, key, limit) {
+  var list = schoolsFor(code, o);
+  if (!list.length) return '<div class="school muted small">No school in our list offers this program yet. Ask your guidance counselor about schools outside Negros Oriental.</div>';
+  var all = SHOWALL[key] || !limit || list.length <= limit;
+  return '<div class="school-list">' + (all ? list : list.slice(0, limit)).map(function (s) { return schoolCard(s, code, o); }).join('') + '</div>' +
+    (list.length > limit && limit ? '<button class="sec more noprint" onclick="SHOWALL[\'' + key + '\']=!SHOWALL[\'' + key + '\'];REDRAW&&REDRAW()">' +
+      (all ? 'Show fewer schools' : 'Show all ' + list.length + ' schools that offer it') + '</button>' : '');
+}
+function toggleMap(btn) {
+  var holder = btn.closest('.school');
+  var box = holder ? holder.querySelector('.mapbox') : null;
+  if (box) { box.remove(); btn.innerHTML = icon('map') + 'Show map'; return; }
+  box = document.createElement('div');
+  box.className = 'mapbox';
+  var frame = document.createElement('iframe');
+  frame.src = btn.getAttribute('data-embed'); frame.loading = 'lazy'; frame.title = 'Map'; frame.referrerPolicy = 'no-referrer-when-downgrade';
+  box.appendChild(frame);
+  holder.appendChild(box);
+  btn.innerHTML = icon('map') + 'Hide map';
+}
+
+// ------------------------------------------------------------ face / fingerprint sign-in (passkeys)
+function b64uToBuf(s) { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u.buffer; }
+function bufToB64u(buf) { var u = new Uint8Array(buf), s = ''; for (var i = 0; i < u.length; i++) s += String.fromCharCode(u[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function deviceKind() {
+  var ua = navigator.userAgent || '', plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+  if (/iPhone|iPod/.test(ua)) return 'iphone';
+  if (/iPad/.test(ua) || (/Mac/.test(plat) && navigator.maxTouchPoints > 1)) return 'ipad';
+  if (/Android/i.test(ua)) return 'android';
+  if (/Mac/i.test(plat)) return 'mac';
+  if (/Win/i.test(plat)) return 'windows';
+  return 'other';
+}
+function bioLabel() {
+  return { iphone: 'Face ID or Touch ID', ipad: 'Face ID or Touch ID', android: 'fingerprint or face', mac: 'Touch ID fingerprint', windows: 'Windows Hello (fingerprint or face)', other: 'fingerprint or face' }[deviceKind()];
+}
+function deviceLabel() {
+  var ua = navigator.userAgent || '', k = deviceKind();
+  var browser = /Edg\//.test(ua) ? 'Edge' : /SamsungBrowser/.test(ua) ? 'Samsung Internet' : /Firefox|FxiOS/.test(ua) ? 'Firefox' : /Chrome|CriOS/.test(ua) ? 'Chrome' : /Safari/.test(ua) ? 'Safari' : 'Browser';
+  var m = /Android [\d.]+; ([^;)]+)/.exec(ua);
+  var dev = { iphone: 'iPhone', ipad: 'iPad', android: m && !/^K$/.test(m[1]) ? m[1].trim() : 'Android phone', mac: 'Mac', windows: 'Windows PC', other: 'Computer' }[k];
+  return dev + ' · ' + browser;
+}
+function faceInit() {
+  FACE.api = !!(window.PublicKeyCredential && navigator.credentials && navigator.credentials.create);
+  FACE.label = bioLabel();
+  try { FACE.here = !IN_GAS && !!CFG.appUrl && new URL(CFG.appUrl).origin === location.origin; } catch (e) { FACE.here = false; }
+  FACE.ready = FACE.api && FACE.here;
+  if (!FACE.ready) return Promise.resolve();
+  return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(function (ok) { FACE.platform = ok; }, function () { FACE.platform = false; });
+}
+function faceErrText(e, setup) {
+  var n = e && e.name;
+  if (n === 'NotAllowedError') return (setup ? 'Setup' : 'Sign-in') + ' was cancelled or timed out. Please try again' + (setup ? '.' : ', or use your password.');
+  if (n === 'InvalidStateError') return 'This device is already set up for face sign-in.';
+  if (n === 'SecurityError') return 'Face sign-in cannot run on this page. Open the CourseMatch app link instead.';
+  if (n === 'NotSupportedError') return 'This browser does not support face or fingerprint sign-in. Try Chrome, Safari, Edge or Samsung Internet.';
+  return e && e.message ? e.message : String(e);
+}
+/** Gets a sign-in challenge in advance, so the button can open Face ID right away (Safari needs this). */
+function prefetchLogin() {
+  if (!FACE.ready) return;
+  FACE.pre = null;
+  api('passkeyChallenge').then(function (c) { c.at = Date.now(); FACE.pre = c; var b = $('faceGo'); if (b) b.disabled = false; })
+    .catch(function () { /* button stays disabled; password still works */ });
+}
+function faceLogin() {
+  var pre = FACE.pre;
+  if (!pre || Date.now() - pre.at > (pre.ttl - 30) * 1000) { prefetchLogin(); setErr('Getting ready… please tap the button again.'); return; }
+  FACE.pre = null;
+  setErr('');
+  navigator.credentials.get({ publicKey: { challenge: b64uToBuf(pre.challenge), rpId: pre.rpId, userVerification: 'required', timeout: 120000 } })
+    .then(function (cred) {
+      busy(true, 'Signing you in…');
+      return api('passkeyLogin', { id: cred.id, clientDataJSON: bufToB64u(cred.response.clientDataJSON),
+        authenticatorData: bufToB64u(cred.response.authenticatorData), signature: bufToB64u(cred.response.signature),
+        userHandle: cred.response.userHandle ? bufToB64u(cred.response.userHandle) : '' }).then(function (res) {
+          store('cm_face', JSON.stringify({ username: res.user.username || '', name: res.user.name, credId: cred.id }));
+          return afterAuth(res, 'face');
+        });
+    })
+    .catch(function (e) {
+      busy(false); prefetchLogin();
+      setErr(e && e.name === 'NotAllowedError' ? cap(FACE.label) + ' is not set up for CourseMatch on this device yet, or it was cancelled. Sign in with your password once, then set up ' + FACE.label + '.' : faceErrText(e, false));
+    });
+}
+/** Loads setup options in advance, then the "Turn on" button calls Face ID / Windows Hello right away. */
+function prepareFaceSetup(btnId) {
+  FACE.reg = null;
+  return api('passkeyOptions').then(function (o) { o.at = Date.now(); FACE.reg = o; var b = $(btnId); if (b) b.disabled = false; });
+}
+function faceSetup(after, onFail) {
+  var o = FACE.reg, who = USER || PENDING;
+  if (!o || Date.now() - o.at > (o.ttl - 30) * 1000) { prepareFaceSetup('faceSetupBtn'); toast('Getting ready… please tap again.'); return; }
+  FACE.reg = null;
+  navigator.credentials.create({ publicKey: {
+    challenge: b64uToBuf(o.challenge), rp: { id: o.rpId, name: o.rpName },
+    user: { id: b64uToBuf(o.user.id), name: o.user.name, displayName: o.user.displayName },
+    pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+    authenticatorSelection: { authenticatorAttachment: 'platform', residentKey: 'required', requireResidentKey: true, userVerification: 'required' },
+    excludeCredentials: (o.exclude || []).map(function (id) { return { type: 'public-key', id: b64uToBuf(id) }; }),
+    timeout: 120000, attestation: 'none' } })
+    .then(function (cred) {
+      busy(true, 'Saving…');
+      return api('passkeyRegister', { id: cred.id, clientDataJSON: bufToB64u(cred.response.clientDataJSON),
+        attestationObject: bufToB64u(cred.response.attestationObject), device: deviceLabel() }).then(function (list) {
+          busy(false);
+          store('cm_face', JSON.stringify({ username: who.username, name: who.name, credId: cred.id }));
+          sheet(); toast(cap(FACE.label) + ' sign-in is on for this device.');
+          if (after) after(list);
+        });
+    })
+    .catch(function (e) { busy(false); toast(faceErrText(e, true)); prepareFaceSetup('faceSetupBtn').catch(function () {}); if (onFail) onFail(e); });
+}
+function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+/** Messenger, Facebook, Instagram, TikTok, LINE, etc. open links in a built-in browser that cannot use Face ID / fingerprint. */
+function inAppBrowser() { return /FBAN|FBAV|FB_IAB|FBIOS|Messenger|Instagram|Line\/|TikTok|musical_ly|Snapchat|; wv\)/i.test(navigator.userAgent || ''); }
+function inAppNote() {
+  var ios = deviceKind() === 'iphone' || deviceKind() === 'ipad';
+  return '<div class="note" style="text-align:left"><span>⚠️</span><div><b>Open CourseMatch in ' + (ios ? 'Safari' : 'Chrome') + '.</b> Messenger and Facebook can’t open the camera face scan or use Face ID or fingerprint. ' +
+    'Tap <b>⋯</b> (top right) → <b>Open in ' + (ios ? 'Safari' : 'browser / Chrome') + '</b>.</div></div>';
+}
+/** On the Apps Script link (password only), send people to the real app where biometrics work. */
+function showLauncher(msg) {
+  USER = null; drawTop();
+  render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() +
+    '<h1 style="font-size:24px">CourseMatch has moved</h1>' +
+    '<p class="sub">For your security, CourseMatch now signs you in with your <b>face or fingerprint</b>. Open the CourseMatch app to continue.</p>' +
+    '<a class="btn big face-btn" href="' + esc(CFG.appUrl) + '" target="_top">' + icon('arrow') + 'Open CourseMatch</a>' +
+    '<p class="small muted" style="margin-top:14px">' + esc(CFG.appUrl) + '</p>' +
+    (inAppBrowser() ? inAppNote() : '') +
+    (msg && !/APP_MOVED/.test(msg) ? '<div class="err">' + esc(msg) + '</div>' : '') + '</div></div>');
+}
+function bioIcon() { var k = deviceKind(); return icon(k === 'iphone' || k === 'ipad' ? 'face' : 'finger'); }
+/** What the phone or computer will show, in plain words (the system pop-up text cannot be changed). */
+function bioHint(setup) {
+  var k = deviceKind();
+  if (k === 'iphone' || k === 'ipad') return 'Your iPhone will show <b>“' + (setup ? 'Save a passkey' : 'Sign in with your passkey') + '”</b>. Tap <b>Continue</b>, then look at your phone (Face ID) or rest your finger on the Home button (Touch ID).';
+  if (k === 'android') return '👆 Your phone will show a <b>fingerprint</b> prompt. Touch the fingerprint sensor (or look at the screen if you use face unlock).' + (setup ? ' If it asks where to save, choose <b>Google Password Manager</b>.' : '');
+  if (k === 'windows') return '👆 A <b>Windows Security</b> window will open. Touch the fingerprint reader, look at the camera, or enter your Windows Hello PIN.';
+  if (k === 'mac') return '👆 Put your finger on the <b>Touch ID</b> key (top-right of the keyboard) when your Mac asks.';
+  return 'Your device will ask for your face, fingerprint, or screen-lock PIN.';
+}
+function bioIcons() {
+  return '<div style="display:flex;gap:12px;justify-content:center;margin:6px 0 14px">' +
+    '<div class="face-ico" style="margin:0;width:72px;height:72px;border-radius:22px">' + icon('face') + '</div>' +
+    '<div class="face-ico" style="margin:0;width:72px;height:72px;border-radius:22px;background:var(--accent-l);color:var(--accent)">' + icon('finger') + '</div></div>';
+}
+function hintBox(setup) { return '<div class="note info" style="text-align:left">' + icon('shield') + '<div>' + bioHint(setup) + '</div></div>'; }
+
+// ---------------- biometric lock: re-verify after 5 minutes away
+var HIDDEN_AT = 0, LOCK_MINUTES = 5;
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) { HIDDEN_AT = Date.now(); return; }
+  if (HIDDEN_AT && Date.now() - HIDDEN_AT > LOCK_MINUTES * 60000) lockApp();
+  HIDDEN_AT = 0;
+});
+function lockApp() {
+  if (!USER || !verifyReady()) return;
+  PENDING = USER; USER = null; sheet(); drawTop();
+  faceStep('verify', true);
+}
+function faceOnHere() { var f = loadJson('cm_face'); return !!(f && USER && f.username === USER.username); }
+/** The hosted app page can verify the person: camera selfie scan, or the device's Face ID / fingerprint (passkey). */
+function verifyReady() { return FACE.here && (camSupported() || FACE.ready); }
+function isPhone() { var k = deviceKind(); return k === 'iphone' || k === 'ipad' || k === 'android'; }
+
+// ---------------- camera selfie scan (face-api.js runs in the browser; only 128 numbers go to the server)
+var FACE_CDNS = ['https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/', 'https://unpkg.com/@vladmandic/face-api@1.7.15/'];
+var FACE_MODELS = FACE_CDNS[0] + 'model/';
+var CAM = { loading: null, stream: null, run: false, timer: null };
+var FS = { enrolled: false, passkeys: false, mustEnroll: false, verified: false, locked: false, after: null };
+
+function camSupported() { return !IN_GAS && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false; }
+/** Loads the face scanner once (about 7 MB the first time; the browser keeps it for next time). */
+function loadFaceLib() {
+  if (CAM.loading) return CAM.loading;
+  CAM.loading = new Promise(function (resolve, reject) {
+    if (window.faceapi) return resolve();
+    (function tryCdn(k) {
+      if (k >= FACE_CDNS.length) return reject(new Error('Could not load the face scanner. Check your internet connection and try again.'));
+      var s = document.createElement('script');
+      s.src = FACE_CDNS[k] + 'dist/face-api.js'; s.async = true;
+      s.onload = function () { FACE_MODELS = FACE_CDNS[k] + 'model/'; resolve(); };
+      s.onerror = function () { s.remove(); tryCdn(k + 1); };
+      document.head.appendChild(s);
+    })(0);
+  }).then(function () {
+    if (!window.faceapi) throw new Error('Could not load the face scanner. Please reload the page and try again.');
+    var tf = faceapi.tf;
+    return Promise.resolve().then(function () { return tf.setBackend('webgl'); }).catch(function () { return false; })
+      .then(function (ok) { return ok ? true : tf.setBackend('cpu'); })   // older phones without WebGL
+      .then(function () { return tf.ready(); });
+  }).then(function () {
+    return Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS),
+      faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS), faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS)]);
+  }).catch(function (e) { CAM.loading = null; throw e; });
+  return CAM.loading;
+}
+/** Opens the front (selfie) camera. Works in Safari (iPhone/iPad/Mac), Chrome, Edge, Firefox and Samsung Internet. */
+function camStart(video) {
+  return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
+    .catch(function (e) {
+      if (e && (e.name === 'OverconstrainedError' || e.name === 'ConstraintNotSatisfiedError' || e.name === 'NotReadableError' || e.name === 'AbortError')) {
+        return navigator.mediaDevices.getUserMedia({ audio: false, video: true });
+      }
+      throw e;
+    })
+    .then(function (stream) {
+      if (!$('scanVideo')) { stream.getTracks().forEach(function (t) { t.stop(); }); throw new Error('cancelled'); }
+      camStop();
+      CAM.stream = stream;
+      video.muted = true; video.setAttribute('muted', ''); video.setAttribute('playsinline', ''); video.setAttribute('autoplay', '');
+      video.srcObject = stream;
+      return Promise.resolve().then(function () { return video.play(); }).catch(function () { /* autoplay is allowed for muted video */ })
+        .then(function () {
+          return new Promise(function (resolve) {
+            if (video.readyState >= 2 && video.videoWidth) return resolve();
+            var done = false;
+            var ok = function () { if (!done) { done = true; resolve(); } };
+            video.addEventListener('loadeddata', ok);
+            setTimeout(ok, 4000);
+          });
+        });
+    });
+}
+function camStop() {
+  CAM.run = false;
+  if (CAM.timer) { clearTimeout(CAM.timer); CAM.timer = null; }
+  if (CAM.stream) { CAM.stream.getTracks().forEach(function (t) { t.stop(); }); CAM.stream = null; }
+}
+function camErrText(e) {
+  var n = e && e.name, k = deviceKind();
+  if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') {
+    return 'Camera permission is blocked. ' + ({
+      iphone: 'Tap “aA” in the address bar → Website Settings → Camera → Allow (or Settings → Safari → Camera → Allow), then try again.',
+      ipad: 'Tap “aA” in the address bar → Website Settings → Camera → Allow (or Settings → Safari → Camera → Allow), then try again.',
+      android: 'Tap the icon left of the web address → Permissions → Camera → Allow, then try again. Also check Settings → Apps → Chrome → Permissions → Camera.',
+      mac: 'Click the camera icon in the address bar → Allow. Also check System Settings → Privacy & Security → Camera for your browser.',
+      windows: 'Click the camera icon in the address bar → Always allow. Also check Windows Settings → Privacy & security → Camera.',
+      other: 'Click the camera icon in the address bar and allow the camera, then try again.' }[k]);
+  }
+  if (n === 'NotFoundError' || n === 'DevicesNotFoundError' || n === 'OverconstrainedError') return 'No camera was found. Use a phone, or a laptop with a webcam.';
+  if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') return 'The camera is being used by another app (Zoom, Meet, Messenger, Camera). Close it and try again.';
+  return e && e.message ? e.message : String(e);
+}
+function checkSvg(cls) {
+  return '<svg class="check-anim' + (cls ? ' ' + cls : '') + '" viewBox="0 0 110 110" aria-hidden="true"><circle cx="55" cy="55" r="48"/><path d="M33 57l15 15 29-31"/></svg>';
+}
+function scanMsg(t, warn) { var el = $('scanMsg'); if (el) { el.textContent = t; el.className = 'scan-msg' + (warn ? ' warn' : ''); } }
+function setScanP(p) { var el = $('scanWrap'); if (el) el.style.setProperty('--p', Math.max(0, Math.min(100, p))); }
+/** Head position from the 68 face points: yaw about 0.5 = looking straight; size and centre are parts of the picture. */
+function faceGeom(d, vw, vh) {
+  var b = d.detection.box, p = d.landmarks.positions, span = p[16].x - p[0].x;
+  return { yaw: span > 0 ? (p[30].x - p[0].x) / span : 0.5, w: b.width / vw, cx: (b.x + b.width / 2) / vw, cy: (b.y + b.height / 2) / vh, score: d.detection.score };
+}
+function snapshot(v) {
+  try {
+    var w = 240, h = Math.round(w * v.videoHeight / v.videoWidth) || 180, c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    var ctx = c.getContext('2d'); ctx.translate(w, 0); ctx.scale(-1, 1); ctx.drawImage(v, 0, 0, w, h);
+    return c.toDataURL('image/jpeg', 0.8);
+  } catch (e) { return ''; }
+}
+
+/**
+ * Required face step. Runs after creating an account and after every password sign-in on the app page.
+ * No saved face yet -> selfie scan to save it. Saved face -> selfie scan to verify (check mark), then the dashboard.
+ * Accounts that only have Face ID / fingerprint (passkey) verify with that first, then save a face scan.
+ */
+function faceStep(mode, locked) {
+  camStop(); FS.locked = !!locked; FS.after = null; FS.mustEnroll = false;
+  render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() + '<p class="muted">Getting ready…</p></div></div>');
+  if (!CFG.faceScan) return serverOld(mode, locked);
+  api('faceStatus').then(function (st) {
+    FS.enrolled = !!st.enrolled; FS.passkeys = !!st.passkeys;
+    if (!camSupported()) {
+      if (FACE.ready) return passkeyStep(mode === 'setup' ? 'setup' : 'verify', locked);
+      return render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() +
+        '<h1 style="font-size:22px">Camera not available</h1><p class="sub">This browser cannot open the camera for the face scan. Open CourseMatch in Chrome or Safari ' +
+        '(not inside Messenger or Facebook).</p>' + (inAppBrowser() ? inAppNote() : '') + '<button class="sec big" onclick="PENDING=null;signOut()">Sign out</button></div></div>');
+    }
+    return scanScreen(st.enrolled ? 'verify' : 'enroll');   // always the camera circle, never the Windows / phone passkey pop-up
+  }).catch(function (e) {
+    var m = e && e.message ? e.message : String(e);
+    if (/FACE_REQUIRED|not allowed for/.test(m)) return serverOld(mode, locked);   // old Code.gs: never loop
+    fail(e);
+  });
+}
+/** Shown when the page is new but Apps Script still runs the old code (FaceScan.gs missing or not deployed). */
+function serverOld(mode, locked) {
+  render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() +
+    '<h1 style="font-size:22px">Face scan is not switched on yet</h1>' +
+    '<p class="sub">The app page is new, but the CourseMatch server is still the old version.</p>' +
+    '<div class="note" style="text-align:left">' + icon('shield') + '<div><b>For the administrator:</b> in Apps Script, add the <b>FaceScan</b> script file, paste the new <b>Code.gs</b>, ' +
+    'run <b>setup</b>, then <b>Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy</b>.</div></div>' +
+    '<p class="tiny muted" style="margin-top:14px"><a onclick="PENDING=null;signOut()">Sign out</a></p></div></div>');
+}
+/** Face scan from the Account page (full session): saves a new face scan, then returns there. */
+function rescanFace() { FS.locked = false; FS.mustEnroll = false; FS.after = function () { go('password'); }; scanScreen('enroll'); }
+
+function scanScreen(kind) {
+  camStop();
+  var who = PENDING || USER || {}, first = esc(String(who.name || '').split(' ')[0] || 'there'), enroll = kind === 'enroll';
+  var back = FS.after ? 'camStop();FS.after=null;go(\'password\')' : 'camStop();PENDING=null;signOut()';
+  var note = FS.locked ? '<div class="note info">' + icon('lock') + '<div>Locked after ' + LOCK_MINUTES + ' minutes away. Scan your face to continue.</div></div>' : '';
+  var first_time = enroll ? '<div class="note info">' + icon('face') + '<div>Hi ' + first + '! This first scan saves your face so CourseMatch can recognize you every time you sign in.</div></div>' : '';
+  // Full-screen "Login Authentication" page: blue header, status text, face circle with grid, instructions. Scans automatically.
+  render('<div class="fa-page"><div class="fa-bar"><a onclick="' + back + '" aria-label="Back">' + icon('back') + '</a>' +
+    '<span>' + (enroll ? 'Face Registration' : 'Login Authentication') + '</span></div><div class="fa-body"><div id="fsBody">' + note + first_time +
+    '<div id="scanMsg" class="scan-msg" role="status" aria-live="polite">Opening your camera…</div>' +
+    '<div id="scanWrap" class="scan-wrap"><div class="scan"><video id="scanVideo" playsinline muted autoplay></video>' +
+    '<div class="scan-grid"></div>' +
+    '<img id="scanSnap" class="hidden" alt="" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover">' +
+    '<div id="scanLine" class="scan-line hidden"></div><div id="scanIdle" class="scan-idle">' + icon('user') + '<span>Camera is starting…</span></div>' +
+    '<div id="scanCheck" class="scan-check hidden">' + checkSvg('') + '</div></div></div>' +
+    '<p class="fa-tips">Position your face within the frame.<br>Kindly remove your face mask if you’re wearing one.<br>Your face will be automatically scanned.</p>' +
+    '<button id="scanBtn" class="big fr-btn hidden" onclick="startScan(\'' + (enroll ? 'enroll' : 'verify') + '\')">' + icon('face') + 'Open camera</button></div>' +
+    '<div id="err" class="err"></div><div id="fsAlt" class="actions" style="justify-content:center"></div>' +
+    '<p class="fa-foot">Use good light and hold your ' + (isPhone() ? 'phone' : 'screen') + ' at eye level. Your photo is not uploaded or saved.<br>' +
+    (FS.after ? '<a onclick="' + back + '">Cancel</a>' : 'Not ' + first + '? <a onclick="' + back + '">Sign out</a>') + '</p></div></div>');
+  if (inAppBrowser()) $('fsAlt').insertAdjacentHTML('afterend', inAppNote());
+  if (!camSupported()) { scanMsg(''); return setErr('This browser cannot open the camera. Open CourseMatch in Chrome or Safari.'); }
+  // open the camera right away: the person only has to put their face inside the circle
+  setTimeout(function () { if ($('scanBtn') && !CAM.run && !CAM.stream) startScan(enroll ? 'enroll' : 'verify', true); }, 250);
+}
+function resetScanUi() {
+  var btn = $('scanBtn');
+  if (btn) { btn.disabled = false; btn.classList.remove('hidden'); btn.innerHTML = icon('refresh') + 'Try again'; }
+  ['scanLine', 'scanSnap', 'scanCheck'].forEach(function (id) { var el = $(id); if (el) el.classList.add('hidden'); });
+  var idle = $('scanIdle'); if (idle) idle.classList.remove('hidden');
+  setScanP(0); scanMsg('');
+}
+function startScan(kind, auto) {
+  var btn = $('scanBtn'), video = $('scanVideo');
+  if (!btn || !video || CAM.run || btn.disabled) return;
+  setErr(''); btn.disabled = true; btn.classList.add('hidden'); scanMsg('Opening your camera…');
+  var camP = camStart(video);   // called straight from the tap (iPhone needs this)
+  camP.then(function () {
+    var idle = $('scanIdle'); if (idle) idle.classList.add('hidden');
+    if (!window.faceapi || !faceapi.nets.faceRecognitionNet.isLoaded) scanMsg('Loading the face scanner… (the first time takes a few seconds)');
+  }).catch(function () { /* handled below */ });
+  Promise.all([camP, loadFaceLib()]).then(function () { runScan(kind); }).catch(function (e) {
+    camStop();
+    if (e && e.message === 'cancelled') return;
+    resetScanUi();
+    if (auto && e && e.name === 'NotAllowedError') {
+      // some browsers only open the camera after a tap: ask for one tap instead of showing an error
+      $('scanBtn').innerHTML = icon('face') + 'Open camera';
+      return scanMsg('Tap “Open camera” and allow the camera.');
+    }
+    setErr(camErrText(e));
+  });
+}
+function runScan(kind) {
+  var video = $('scanVideo');
+  if (!video) return camStop();
+  var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: isPhone() ? 256 : 320, scoreThreshold: 0.5 });
+  var st = { phase: 'look1', good: 0, samples: [], started: Date.now() };
+  CAM.run = true;
+  $('scanLine').classList.remove('hidden'); $('scanIdle').classList.add('hidden');
+  setScanP(0); scanMsg('Position your face within the frame');
+  function next() { if (CAM.run) CAM.timer = setTimeout(tick, 60); }
+  function stop(msg) { camStop(); resetScanUi(); setErr(msg); }
+  function tick() {
+    CAM.timer = null;
+    var v = $('scanVideo');
+    if (!CAM.run || !v) return camStop();
+    if (Date.now() - st.started > 90000) return stop('The scan took too long. Move to a brighter place, face the camera, and tap Try again.');
+    if (!v.videoWidth) return next();
+    var task = faceapi.detectAllFaces(v, opts).withFaceLandmarks();
+    if (st.phase !== 'turn') task = task.withFaceDescriptors();
+    task.then(function (list) { if (!CAM.run) return; handle(list || [], v); if (CAM.run) next(); })
+      .catch(function (e) { stop('The face scanner stopped (' + (e && e.message ? e.message : e) + '). Please try again.'); });
+  }
+  function handle(list, v) {
+    if (!list.length) { st.good = 0; return scanMsg('Position your face within the frame', true); }
+    if (list.length > 1) { st.good = 0; return scanMsg('Only one face, please', true); }
+    var d = list[0], g = faceGeom(d, v.videoWidth, v.videoHeight);
+    if (g.w < 0.15) { st.good = 0; return scanMsg('Move closer to the camera', true); }
+    if (g.w > 0.9) { st.good = 0; return scanMsg('Move back a little', true); }
+    if (g.cx < 0.2 || g.cx > 0.8 || g.cy < 0.15 || g.cy > 0.85) { st.good = 0; return scanMsg('Move your face to the middle of the circle', true); }
+    var straight = g.yaw > 0.35 && g.yaw < 0.65;
+    if (st.phase === 'turn') {
+      if (Math.abs(g.yaw - 0.5) > 0.13) { st.phase = 'look2'; st.good = 0; setScanP(66); return scanMsg('Good! Now look straight again and stay still'); }
+      return scanMsg('Turn your head slowly to the left or right');
+    }
+    if (!straight) { st.good = 0; return scanMsg('Look straight at the camera', true); }
+    if (g.score < 0.5) { st.good = 0; return scanMsg('Stay still… more light helps', true); }
+    st.good += 1;
+    scanMsg('Stay still');
+    if (st.good < 2 || !d.descriptor) return;
+    st.good = 0;
+    st.samples.push(Array.prototype.slice.call(d.descriptor));
+    if (st.phase === 'look1') {
+      setScanP(st.samples.length * 17);
+      if (st.samples.length >= 2) { st.phase = 'turn'; setScanP(40); scanMsg('Now turn your head slowly to the left or right'); }
+    } else {
+      setScanP(66 + (st.samples.length - 2) * 17);
+      if (st.samples.length >= 4) finish(v);
+    }
+  }
+  function finish(v) {
+    var snap = snapshot(v);
+    camStop();
+    setScanP(100);
+    $('scanLine').classList.add('hidden');
+    if (snap) { $('scanSnap').src = snap; $('scanSnap').classList.remove('hidden'); }
+    sendScan(kind, st.samples, snap);
+  }
+  next();   // start reading the camera
+}
+function sendScan(kind, samples, snap) {
+  scanMsg(kind === 'enroll' ? 'Saving your face scan…' : 'Checking your face…');
+  busy(true, kind === 'enroll' ? 'Saving your face scan…' : 'Checking your face…');
+  api(kind === 'enroll' ? 'faceEnroll' : 'faceVerify', { descriptors: samples, device: deviceLabel() }).then(function (res) {
+    busy(false); FS.verified = true; FS.enrolled = true;
+    showVerified(kind, res.user, snap);
+  }).catch(function (e) {
+    busy(false);
+    var m = e && e.message ? e.message : String(e);
+    if (m.indexOf('SESSION_EXPIRED') !== -1) return fail(e);
+    resetScanUi(); setErr(m);
+  });
+}
+/** The check mark, then the person's details, then the dashboard. */
+function showVerified(kind, u, snap) {
+  u = u || PENDING || USER || {};
+  scanMsg(kind === 'enroll' ? 'Face saved' : 'Verified');
+  var chk = $('scanCheck'); if (chk) chk.classList.remove('hidden');
+  if (u.photo) PHOTO = u.photo;
+  var pic = u.photo || snap;
+  setTimeout(function () {
+    var body = $('fsBody'), alt = $('fsAlt');
+    if (!body) return;
+    if (alt) alt.innerHTML = '';
+    body.innerHTML = checkSvg('green') +
+      '<h1 style="font-size:24px;margin-top:6px">' + (kind === 'enroll' ? 'Face saved' : 'Verified') + '</h1>' +
+      '<p class="sub" style="margin-bottom:0">' + (kind === 'enroll' ? 'Your face scan is set up.' : 'Identity confirmed.') + ' Welcome, ' + esc(String(u.name || '').split(' ')[0]) + '!</p>' +
+      '<div class="verified-card">' + avatar(pic, u.name, 'xl') + '<div style="min-width:0"><div class="nm">' + esc(u.name) + '</div>' +
+      '<div class="sm">@' + esc(u.username) + ' · ' + (u.role === 'counselor' ? 'Guidance counselor' : 'Student') + '</div>' +
+      (u.email ? '<div class="sm">' + esc(u.email) + '</div>' : '') +
+      '<div style="margin-top:6px"><span class="vpill">' + icon('check') + 'Face verified</span></div></div></div>' +
+      '<p class="small muted">' + (FS.after ? 'Going back…' : 'Opening your dashboard…') + '</p>';
+    var bar = document.querySelector('.fa-bar span, .fr-bar span'); if (bar) bar.textContent = kind === 'enroll' ? 'Face Registered' : 'Authentication Successful';
+    setTimeout(function () { finishFace(); }, 1800);
+  }, 900);
+}
+
+/** Face ID / fingerprint (passkey) step: used when the camera is not available, or chosen instead of the scan. */
+function passkeyStep(mode, locked) {
+  camStop();
+  var who = PENDING || USER || {};
+  render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() +
+    '<div id="fsBody"><p class="muted">Getting ready…</p></div><div id="err" class="err"></div><div id="fsSkip"></div>' +
+    '<p class="tiny muted" style="margin-top:14px">Not ' + esc(String(who.name || '').split(' ')[0]) + '? <a onclick="PENDING=null;signOut()">Sign out</a></p></div></div>');
+  FACE.reg = null; FACE.pre = null;
+  Promise.all([prepareFaceSetup('none'), api('passkeyChallenge').then(function (c) { c.at = Date.now(); FACE.pre = c; })]).then(function () {
+    var creds = FACE.reg.exclude || [];
+    if (mode === 'verify' && creds.length) drawVerify(creds); else drawSetup(mode === 'setup');
+  }).catch(function (e) { fail(e); });
+  function step(n) { return '<div class="pill" style="margin-bottom:10px">' + (n || '') + '</div>'; }
+  function drawSetup(isNew) {
+    $('fsBody').innerHTML = (isNew ? step('Last step: secure your account') : step('Set up this device')) +
+      '<h1 style="font-size:23px">Set up biometric verification</h1>' +
+      '<p class="sub">From now on, CourseMatch will check your <b>' + esc(FACE.label) + '</b> every time you sign in' + (isNew ? '' : ' on this device') + '. ' +
+      'Your face or fingerprint never leaves this device.</p>' + hintBox(true) +
+      (FACE.platform === false ? '<div class="note info">' + icon('phone') + '<div>This device has no face or fingerprint reader. It will use your screen-lock PIN, or you can pick “use a phone” and scan a QR code with your phone.</div></div>' : '') +
+      '<button id="faceSetupBtn" class="big face-btn" onclick="faceSetup(function(){finishFace()}, faceFailed)">' + bioIcon() + 'Set up ' + esc(FACE.label) + '</button>';
+  }
+  function drawVerify(creds) {
+    var other = camSupported()
+      ? (FS.enrolled ? '<button class="link" onclick="scanScreen(\'verify\')">' + icon('face') + ' Use the camera face scan instead</button>'
+                     : '<p class="tiny muted">On a new phone or computer? Ask your guidance counselor to reset your sign-in, then scan your face.</p>')
+      : '<p class="tiny muted">On a new phone or computer? Ask your guidance counselor to reset your sign-in.</p>';
+    $('fsBody').innerHTML = step(locked ? '🔒 Locked after ' + LOCK_MINUTES + ' minutes away' : 'Step 2 of 2') + '<h1 style="font-size:23px">Biometric verification</h1>' +
+      '<p class="sub">Hi ' + esc(String(who.name || '').split(' ')[0]) + '! Confirm it’s you with your <b>' + esc(FACE.label) + '</b>.' +
+      (FS.mustEnroll ? ' After this, you will scan your face once with the camera.' : '') + '</p>' + hintBox(false) +
+      '<button id="faceVerifyBtn" class="big face-btn" onclick="faceVerify()">' + bioIcon() + 'Verify with ' + esc(FACE.label) + '</button>' +
+      '<div class="actions" style="justify-content:center">' + other + '</div>';
+    faceVerify.creds = creds;
+  }
+}
+function faceVerify() {
+  var pre = FACE.pre;
+  if (!pre || Date.now() - pre.at > (pre.ttl - 30) * 1000) { return passkeyStep('verify', FS.locked); }
+  FACE.pre = null; setErr('');
+  var who = PENDING || USER;
+  navigator.credentials.get({ publicKey: { challenge: b64uToBuf(pre.challenge), rpId: pre.rpId, userVerification: 'required', timeout: 120000,
+    allowCredentials: (faceVerify.creds || []).map(function (id) { return { type: 'public-key', id: b64uToBuf(id) }; }) } })
+    .then(function (cred) {
+      busy(true, 'Checking…');
+      return api('passkeyLogin', { id: cred.id, clientDataJSON: bufToB64u(cred.response.clientDataJSON),
+        authenticatorData: bufToB64u(cred.response.authenticatorData), signature: bufToB64u(cred.response.signature) }).then(function (res) {
+          if (res.user.id !== who.id) throw new Error('That face sign-in belongs to a different account.');
+          busy(false);
+          TOKEN = res.token; store('cm_token', TOKEN);
+          store('cm_face', JSON.stringify({ username: who.username, name: who.name, credId: cred.id }));
+          FS.verified = true;
+          finishFace();
+        });
+    })
+    .catch(function (e) {
+      busy(false);
+      api('passkeyChallenge').then(function (c) { c.at = Date.now(); FACE.pre = c; }).catch(function () {});
+      setErr(e && e.name === 'NotAllowedError' ? 'Not verified. Please try again.' : faceErrText(e, false));
+      faceFailed();
+    });
+}
+/** After a failed attempt, a small way out appears for devices that truly cannot do this. */
+function faceFailed() {
+  faceFailed.n = (faceFailed.n || 0) + 1;
+  if (faceFailed.n < 2) return;
+  var el = $('fsSkip');
+  if (!el) return;
+  el.innerHTML = CFG.faceRequired
+    ? '<div class="note info" style="text-align:left;margin-top:14px">' + icon('shield') + '<div><b>Still not working?</b> Check that a fingerprint or Face ID is set up in your phone’s settings, ' +
+      'and open CourseMatch in Chrome or Safari. If your device has no face or fingerprint unlock, ask your guidance counselor for help.</div></div>'
+    : '<p class="tiny muted" style="margin-top:14px">Still not working? <a onclick="finishFace(true)">Continue with password only this time</a>. You will be asked again next time.</p>';
+}
+function finishFace(skipped) {
+  faceFailed.n = 0; camStop();
+  if (!skipped && FS.mustEnroll && camSupported()) { FS.mustEnroll = false; return scanScreen('enroll'); }
+  FS.mustEnroll = false; FS.locked = false;
+  if (FS.after) { var after = FS.after; FS.after = null; return after(); }
+  PENDING = null; loadMe(); if (skipped) toast('Signed in with password only.');
+}
+
+// ------------------------------------------------------------ top bar + tabs
+function navLinks() {
+  return USER.role === 'student'
+    ? [['home', 'Home', 'home'], ['steps', 'My steps', 'steps'], ['recs', 'Results', 'star'], ['schools', 'Schools', 'school'], ['news', 'News', 'bell']]
+    : [['students', 'Students', 'users'], ['schools', 'Schools', 'school'], ['news', 'News', 'bell']];
+}
+function isOn(key) {
+  var stepPages = ['profile', 'grades', 'exam', 'skills', 'personality'];
+  return PAGE === key || (key === 'steps' && stepPages.indexOf(PAGE) !== -1) || (key === 'students' && PAGE === 'student');
+}
+function drawTop() {
+  if (!USER) {
+    $('top').innerHTML = '<div class="top-in"><div class="brand"><div class="logo">' + icon('cap') + '</div>CourseMatch</div></div>';
+    $('tabs').innerHTML = ''; $('tabs').classList.add('hidden'); return;
+  }
+  var links = navLinks();
+  var link = function (l) { return '<a class="' + (isOn(l[0]) ? 'on' : '') + '" onclick="go(\'' + l[0] + '\')">' + icon(l[2]) + '<span>' + l[1] + '</span>' +
+    (l[0] === 'news' && UNREAD > 0 ? '<span class="dot">' + UNREAD + '</span>' : '') + '</a>'; };
+  $('top').innerHTML = '<div class="top-in"><a class="brand" onclick="go(USER.role===\'student\'?\'home\':\'students\')" style="text-decoration:none"><div class="logo">' + icon('cap') + '</div>CourseMatch</a>' +
+    '<nav class="nav">' + links.map(link).join('') + '</nav>' +
+    '<div class="me"><button class="me-btn" onclick="toggleMenu(event)" aria-label="Account menu">' + avatar(PHOTO, USER.name) + '<span class="me-name">' + esc(USER.name) + '</span></button><div id="menu" class="menu hidden">' +
+    '<div class="mh"><b>' + esc(USER.name) + '</b><div class="small muted">' + esc(USER.role === 'student' ? 'Student' : 'Guidance counselor') + ' · @' + esc(USER.username) + '</div></div>' +
+    (USER.role === 'student' ? '<a onclick="go(\'record\')">' + icon('file') + 'My record</a>' : '') +
+    '<a onclick="go(\'password\')">' + icon('shield') + 'Account & sign-in</a><a onclick="signOut()">' + icon('logout') + 'Sign out</a></div></div></div>';
+  $('tabs').classList.remove('hidden');
+  $('tabs').innerHTML = links.map(link).join('');
+}
+function toggleMenu(e) { e.stopPropagation(); $('menu').classList.toggle('hidden'); }
+document.addEventListener('click', function () { var m = $('menu'); if (m) m.classList.add('hidden'); });
+
+function go(page) {
+  PAGE = page;
+  drawTop();
+  var pages = { home: pHome, steps: pSteps, profile: pProfile, grades: pGrades, exam: pExam, skills: pSkills, personality: pPersonality,
+                recs: pRecs, schools: pSchools, record: pRecord, news: pNews, password: pPassword, students: pStudents };
+  (pages[page] || (USER.role === 'student' ? pHome : pStudents))();
+}
+
+// ------------------------------------------------------------ sign in / sign up
+function showAuth(mode, msg) {
+  USER = null; drawTop();
+  if (!FACE.here && CFG.appUrl && CFG.faceRequired) return showLauncher(msg);
+  var signup = mode === 'signup';
+  var hasFace = false;   // sign-in is always: password, then the camera face scan
+  var faceTop = '';
+  var lastUser = load('cm_user') || ((loadJson('cm_face') || {}).username) || '';
+  var faceBlock = !FACE.here && CFG.appUrl ? '<div class="note info" style="margin-top:18px">' + icon('face') + '<div>Face and fingerprint sign-in work in the CourseMatch app. ' +
+      '<a href="' + esc(CFG.appUrl) + '" target="_top">Open the CourseMatch app</a></div></div>' : '';
+  render('<div class="auth-wrap"><div class="auth-hero"><div class="logo" style="width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.2);box-shadow:none">' + icon('cap') + '</div>' +
+    '<h1>Find the course that fits you.</h1><p>Answer a few short steps and see your best-matched college courses, plus every nearby school that offers them.</p>' +
+    '<ul><li><span>' + icon('steps') + '</span>Grades, exam, skills and interests</li><li><span>' + icon('star') + '</span>Top 5 course matches, explained</li>' +
+    '<li><span>' + icon('school') + '</span>Schools near you that offer each course</li><li><span>' + icon('face') + '</span>Sign in with a camera face scan</li></ul></div>' +
+    '<div class="card auth-card">' + (FACE.here && (inAppBrowser() || !FACE.api) ? inAppNote() : '') + '<h1 style="font-size:22px">' + (signup ? 'Create your account' : 'Welcome back') + '</h1><p class="sub" style="margin-bottom:10px">' +
+    (signup ? 'It only takes a minute.' : 'Sign in to continue.') + '</p>' +
+    '<div class="seg"><button class="' + (signup ? '' : 'on') + '" onclick="showAuth(\'login\')">Sign in</button><button class="' + (signup ? 'on' : '') + '" onclick="showAuth(\'signup\')">Create account</button></div>' +
+    faceTop +
+    (signup ? '<label for="a_name">Full name</label><input id="a_name" maxlength="80" autocomplete="name" placeholder="Juan Dela Cruz">' +
+      '<label for="a_email">Email address</label><input id="a_email" type="email" maxlength="120" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com">' +
+      '<div class="tiny muted" style="margin-top:4px">We send a reset code here if you forget your password.</div>' : '') +
+    '<label for="a_user">Username</label><input id="a_user" maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. juan.delacruz" value="' + (signup ? '' : esc(lastUser)) + '">' +
+    '<label for="a_pass">Password</label><div class="pw"><input id="a_pass" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" placeholder="' + (signup ? 'At least 6 characters' : '') + '">' +
+    '<button type="button" class="link small" onclick="var i=$(\'a_pass\');i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'Show\':\'Hide\'">Show</button></div>' +
+    (signup ? '<label for="a_role">I am a</label><select id="a_role" onchange="$(\'codeBox\').classList.toggle(\'hidden\', this.value!==\'counselor\')">' +
+      '<option value="student">Student</option><option value="counselor">Guidance counselor</option></select>' +
+      '<div id="codeBox" class="hidden"><label for="a_code">Counselor sign-up code</label><input id="a_code" maxlength="10" inputmode="numeric"></div>' +
+      '<p class="tiny muted">By creating an account, you agree that your answers will be saved and seen by guidance counselors for career guidance only (Data Privacy Act of 2012). If you are below 18, ask your parent or guardian first.</p>' : '') +
+    (signup ? '' : '<div style="text-align:right;margin-top:8px"><a class="small" onclick="showForgot()">Forgot password?</a></div>') +
+    (signup && verifyReady() ? '<div class="note info" style="margin-top:14px">' + icon('face') + '<div>Next, you will scan your face with your camera. You will scan it again every time you sign in.</div></div>' : '') +
+    '<div id="err" class="err">' + esc(msg || '') + '</div>' +
+    '<button class="big' + (FACE.ready && !signup && hasFace ? ' sec' : '') + '" onclick="' + (signup ? 'doSignup()' : 'doLogin()') + '">' + (signup ? 'Create my account' : 'Sign in with password') + '</button>' +
+    (verifyReady() && !signup ? '<div class="note info" style="margin-top:16px">' + icon('face') + '<div>After your password, the camera opens. Put your face inside the circle to verify.</div></div>' : '') +
+    faceBlock + '</div></div>');
+  var pass = $('a_pass');
+  if (pass) pass.addEventListener('keydown', function (e) { if (e.key === 'Enter') { if (signup) doSignup(); else doLogin(); } });
+}
+function showWelcomeBack(saved, msg) {
+  render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:440px"><div class="card auth-card welcome">' + bioIcons() +
+    '<h1 style="font-size:24px">Welcome back, ' + esc(String(saved.name || '').split(' ')[0] || 'there') + '!</h1>' +
+    '<p class="sub">Biometric verification: use your <b>' + esc(FACE.label) + '</b> to sign in.</p>' + hintBox(false) +
+    '<button id="faceGo" class="big face-btn" disabled onclick="faceLogin()">' + bioIcon() + 'Sign in with ' + esc(FACE.label) + '</button>' +
+    '<div id="err" class="err">' + esc(msg || '') + '</div>' +
+    '<div class="actions" style="justify-content:center"><button class="link" onclick="showAuth.pw=true;showAuth(\'login\')">Use password instead</button>' +
+    '<button class="link" onclick="store(\'cm_face\',null);showAuth(\'login\')">Not ' + esc(String(saved.name || '').split(' ')[0] || 'you') + '?</button></div></div></div>');
+  prefetchLogin();
+}
+// ------------------------------------------------------------ forgot password (email code)
+function showForgot(email, sentMsg) {
+  USER = null; drawTop();
+  var step2 = !!sentMsg;
+  render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card">' +
+    '<a class="small" onclick="showAuth(\'login\')">← Back to sign in</a>' +
+    '<div class="face-ico" style="margin-top:14px">' + icon('lock') + '</div>' +
+    '<h1 style="font-size:23px;text-align:center">' + (step2 ? 'Check your email' : 'Forgot your password?') + '</h1>' +
+    (step2
+      ? '<p class="sub" style="text-align:center">' + esc(sentMsg) + '</p>' +
+        '<label for="f_code">6-digit code</label><input id="f_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••" style="font-size:22px;letter-spacing:8px;text-align:center">' +
+        '<label for="f_new">New password</label><input id="f_new" type="password" autocomplete="new-password" placeholder="At least 6 characters">' +
+        '<label for="f_new2">Type the new password again</label><input id="f_new2" type="password" autocomplete="new-password">' +
+        '<div id="err" class="err"></div><button class="big" onclick="doReset(\'' + esc(email) + '\')">Reset password</button>' +
+        '<div class="actions" style="justify-content:center"><button class="link" onclick="doForgot(\'' + esc(email) + '\')">Send a new code</button>' +
+        '<button class="link" onclick="showForgot()">Use a different email</button></div>'
+      : '<p class="sub" style="text-align:center">Enter the email address on your account. We will send you a code to reset your password. The email also shows your username.</p>' +
+        '<label for="f_email">Email address</label><input id="f_email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" value="' + esc(email || '') + '">' +
+        '<div id="err" class="err"></div><button class="big" onclick="doForgot()">Send reset code</button>' +
+        '<p class="tiny muted" style="text-align:center;margin-top:14px">No email on your account? Ask your guidance counselor for help.</p>') +
+    '</div></div>');
+  var f = $(step2 ? 'f_code' : 'f_email'); if (f) f.focus();
+}
+function doForgot(email) {
+  email = email || val('f_email');
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) return setErr('Please enter a valid email address.');
+  busy(true, 'Sending your code…');
+  api('forgotPassword', { email: email }).then(function (r) { busy(false); showForgot(email.toLowerCase(), r.message); }).catch(function (e) { fail(e); });
+}
+function doReset(email) {
+  var code = val('f_code').replace(/\D/g, ''), n = $('f_new').value, c = $('f_new2').value;
+  if (code.length !== 6) return setErr('Please enter the 6-digit code from the email.');
+  if (n.length < 6) return setErr('New password must be at least 6 characters.');
+  if (n !== c) return setErr('The new passwords do not match.');
+  busy(true, 'Resetting…');
+  api('resetPassword', { email: email, code: code, newPassword: n }).then(function (r) { toast('Password changed ✓'); return afterAuth(r, 'password'); })
+    .catch(function (e) { fail(e); });
+}
+function doLogin() {
+  var u = val('a_user'), p = $('a_pass').value;
+  if (!u || !p) { setErr('Please enter your username and password.'); return; }
+  busy(true, 'Signing you in…');
+  api('login', { username: u, password: p }).then(function (r) { return afterAuth(r, 'password'); }).catch(function (e) { fail(e); });
+}
+function doSignup() {
+  var d = { name: val('a_name'), username: val('a_user'), email: val('a_email'), password: $('a_pass').value, role: $('a_role').value, counselorCode: val('a_code') };
+  if (d.name.length < 2) { setErr('Please enter your full name.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(d.email)) { setErr('Please enter a valid email address. It is used if you forget your password.'); return; }
+  if (!/^[a-zA-Z0-9._-]{3,30}$/.test(d.username)) { setErr('Username must be 3–30 letters, numbers, dots, dashes, or underscores.'); return; }
+  if (d.password.length < 6) { setErr('Password must be at least 6 characters.'); return; }
+  busy(true, 'Creating your account…');
+  api('register', d).then(function (r) { r.user.username = d.username.toLowerCase(); return afterAuth(r, 'signup'); }).catch(function (e) { fail(e); });
+}
+/** how = 'signup' | 'password' | 'face'. Password and sign-up always go through the face step on the app page. */
+function afterAuth(res, how) {
+  TOKEN = res.token; store('cm_token', TOKEN); showAuth.pw = false;
+  if (res.user && res.user.username) store('cm_user', res.user.username);
+  if (res.pending && !verifyReady()) {
+    busy(false); signOutLocal();
+    return showAuth('login', 'This browser cannot open the camera or use face or fingerprint. Open CourseMatch in Chrome or Safari (not inside Messenger or Facebook).');
+  }
+  if (how !== 'face' && verifyReady()) { busy(false); PENDING = res.user; PENDING.username = PENDING.username || val('a_user') || ''; return faceStep(how === 'signup' ? 'setup' : 'verify'); }
+  if (how === 'face') FS.verified = true;
+  return loadMe();
+}
+function loadMe() {
+  busy(true);
+  return api('me').then(function (m) {
+    if (m.pending) { busy(false); if (verifyReady()) { PENDING = m.user; return faceStep('verify'); } signOutLocal(); return showAuth('login'); }
+    busy(false); USER = m.user; UNREAD = m.unread || 0; REC = m.record || null; PHOTO = m.photo || ''; EMAIL = m.email || ''; FS.enrolled = !!m.face;
+    go(USER.role === 'student' ? 'home' : 'students');
+  }).catch(function (e) { fail(e); });
+}
+function signOutLocal() { camStop(); TOKEN = null; USER = null; REC = null; PHOTO = ''; FS.verified = false; store('cm_token', null); }
+function signOut() { PENDING = null; var t = TOKEN; signOutLocal(); if (t) { var keep = TOKEN; TOKEN = t; api('logout').catch(function () {}); TOKEN = keep; } showAuth('login'); }
+
+// ------------------------------------------------------------ student: home + steps
+function stepsDone() { return STEP_KEYS.filter(function (s) { return !!REC[s[0]]; }).length; }
+function stepCards() {
+  return '<div class="steps-grid">' + STEP_KEYS.map(function (s) {
+    var ok = !!REC[s[0]];
+    return '<div class="step' + (ok ? ' done' : '') + '" onclick="go(\'' + s[2] + '\')"><div class="ic">' + icon(ok ? 'check' : s[3]) + '</div><div><div class="t">' + s[1] +
+      '</div><div class="s">' + (ok ? 'Done' : esc(s[4])) + '</div></div></div>';
+  }).join('') +
+  '<div class="step' + (REC.recommendation ? ' done' : '') + '" onclick="go(\'recs\')"><div class="ic">' + icon(REC.recommendation ? 'check' : 'star') + '</div><div><div class="t">Results</div><div class="s">' +
+  (REC.recommendation ? 'Ready to view' : 'After the 5 steps') + '</div></div></div></div>';
+}
+function ring(done, total) {
+  var c = 2 * Math.PI * 42, pct = done / total;
+  return '<div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="10"/>' +
+    '<circle cx="50" cy="50" r="42" fill="none" stroke="#fff" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + c + '" stroke-dashoffset="' + (c * (1 - pct)) + '"/></svg>' +
+    '<div class="lbl">' + done + '/' + total + '<small>steps</small></div></div>';
+}
+function endorsedCard(e, o, key, limit) {
+  if (!e || e.status !== 'Endorsed' || !e.program) return '';
+  var list = schoolsFor(e.program, o), nearN = list.filter(function (s) { return s.km !== null && s.km <= CFG.nearbyKm; }).length;
+  return '<div class="card endorsed"><div class="tag">' + icon('check') + (USER && USER.role === 'counselor' ? ' Endorsed course' : ' Endorsed by your counselor') + '</div><h2 style="margin:4px 0 2px">' + esc(progName(e.program)) + '</h2>' +
+    '<div class="small muted">' + esc(e.program) + ' · by ' + esc(e.counselor) + '</div>' + (e.notes ? '<p class="small">' + esc(e.notes) + '</p>' : '') +
+    '<p class="small"><b>' + list.length + '</b> school' + (list.length === 1 ? '' : 's') + ' in our list offer this course; <b>' + nearN + '</b> within ' + CFG.nearbyKm + ' km of ' + esc(originText(o)) + '.</p>' +
+    (limit ? schoolList(e.program, o, key, limit) : '') + '</div>';
+}
+function pHome() {
+  var e = REC.endorsement, done = stepsDone(), next = STEP_KEYS.filter(function (s) { return !REC[s[0]]; })[0];
+  var o = myOrigin();
+  var cta = next ? '<a class="btn" onclick="go(\'' + next[2] + '\')">Continue: ' + next[1] + icon('arrow') + '</a>'
+    : (REC.recommendation ? '<a class="btn" onclick="go(\'recs\')">See my results' + icon('arrow') + '</a>' : '<a class="btn" onclick="go(\'recs\')">Get my recommendations' + icon('arrow') + '</a>');
+  var top = REC.recommendation && REC.recommendation.top ? REC.recommendation.top.slice(0, 3) : [];
+  var remind = !EMAIL ? '<div class="note">' + icon('shield') + '<div><b>Add your email</b> so you can reset your password if you forget it. <a onclick="go(\'password\')">Add email</a></div></div>' : '';
+  var pr = REC.profile || {};
+  var who = '<div class="who"><span><b>' + esc(USER.name) + '</b></span><span>@' + esc(USER.username) + '</span>' +
+    (pr.school ? '<span>' + esc(pr.school) + (pr.strand ? ' · ' + esc(pr.strand) : '') + '</span>' : '') +
+    (FS.verified ? '<span class="vpill">' + icon('check') + 'Face verified</span>' : '') + '</div>';
+  render(remind + '<div class="hero">' + ring(done, 5) + '<div style="position:relative;z-index:1"><h1>Hi, ' + esc(USER.name.split(' ')[0]) + '! 👋</h1>' + who + '<p>' +
+    (done < 5 ? 'Finish your steps to see the courses that fit you best.' : 'All steps done. Your course matches are ready.') + '</p>' + cta + '</div></div>' +
+    (e.status === 'Endorsed' ? endorsedCard(e, o, 'home-end', 0) + '<div class="actions" style="margin:-6px 0 18px"><button class="ghost" onclick="SCH.code=\'' + esc(e.program) + '\';go(\'schools\')">' + icon('school') + 'Review the schools for this course</button></div>' : '') +
+    (top.length ? '<h2>Your top matches</h2><div class="card">' + top.map(function (p, i) {
+      return '<div class="allrow" style="cursor:pointer" onclick="go(\'recs\')"><div><b>' + (i + 1) + '. ' + esc(p.name) + '</b></div><div class="bar"><div style="width:' + Math.min(100, p.total) + '%"></div></div><div><b>' + p.total + '</b></div></div>';
+    }).join('') + '</div>' : '') +
+    '<h2>Your steps</h2>' + stepCards() +
+    '<h2>Counselor review</h2><div class="card"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="pill ' + esc(e.status.split(' ')[0]) + '">' + esc(e.status) + '</span>' +
+    (e.status === 'Endorsed' ? '<span>' + esc(progName(e.program)) + ' · by ' + esc(e.counselor) + '</span>' : '<span class="small muted">Your guidance counselor will review your results.</span>') + '</div>' +
+    (e.notes ? '<p style="margin-bottom:0"><b>Notes:</b> ' + esc(e.notes) + '</p>' : '') + '</div>' +
+    '<div class="note info">' + icon('shield') + '<div>CourseMatch gives suggestions only. Always talk to your guidance counselor before choosing a course.</div></div>');
+}
+function pSteps() {
+  render('<h1>My steps</h1><p class="sub">Complete all five. You can come back and change your answers any time.</p>' + stepCards());
+}
+
+// ------------------------------------------------------------ student: profile (+ course preference)
+function options(list, current, placeholder) {
+  return (placeholder ? '<option value="">' + placeholder + '</option>' : '') + list.map(function (o) {
+    var v = typeof o === 'string' ? o : o.code, t = typeof o === 'string' ? o : o.name;
+    return '<option value="' + esc(v) + '"' + (v === current ? ' selected' : '') + '>' + esc(t) + '</option>';
+  }).join('');
+}
+function stepHead(title, sub) { return '<div class="head"><div><a class="small" onclick="go(\'steps\')">← My steps</a><h1>' + title + '</h1>' + (sub ? '<p class="sub">' + sub + '</p>' : '') + '</div></div>'; }
+var PHOTO_MAX = 45000;
+function photoCard(title) {
+  return '<div class="card"><h2>' + (title || 'Profile picture') + '</h2><div class="photo-card">' +
+    '<div id="photoPreview">' + avatar(PHOTO, USER.name, 'lg') + '</div><div style="flex:1;min-width:200px">' +
+    '<input id="photoFile" type="file" accept="image/jpeg,image/png,image/webp,image/*" class="hidden" onchange="pickPhoto(this)">' +
+    '<div class="actions" style="margin-top:0"><button onclick="$(\'photoFile\').click()">' + (PHOTO ? 'Change picture' : 'Upload picture') + '</button>' +
+    (PHOTO ? '<button class="danger" onclick="removePhoto()">Remove</button>' : '') + '</div>' +
+    '<p class="small muted" style="margin-bottom:0">Use a clear photo of your face. It is shown to you and your guidance counselor.</p>' +
+    '<div id="photoErr" class="err"></div></div></div></div>';
+}
+/** Reads the chosen picture, crops it to a square, and shrinks it so it fits in one spreadsheet cell. */
+function pickPhoto(input) {
+  var file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (!/^image\//.test(file.type)) return setErr('Please choose a picture file (JPG or PNG).', 'photoErr');
+  if (file.size > 15 * 1024 * 1024) return setErr('That picture is bigger than 15 MB. Please choose a smaller one.', 'photoErr');
+  busy(true);
+  var reader = new FileReader();
+  reader.onerror = function () { busy(false); setErr('Could not read that picture. Please try another one.', 'photoErr'); };
+  reader.onload = function () {
+    var img = new Image();
+    img.onerror = function () { busy(false); setErr('This picture type is not supported here. Please use a JPG or PNG (on iPhone, take a screenshot of the photo and upload that).', 'photoErr'); };
+    img.onload = function () {
+      try {
+        var side = Math.min(img.naturalWidth, img.naturalHeight);
+        var sx = (img.naturalWidth - side) / 2, sy = (img.naturalHeight - side) / 2;
+        var data = '', sizes = [256, 200, 160, 128], q = 0.85;
+        for (var i = 0; i < sizes.length && (!data || data.length > PHOTO_MAX); i++) {
+          var c = document.createElement('canvas'); c.width = c.height = sizes[i];
+          var ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, sizes[i], sizes[i]);
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, sizes[i], sizes[i]);
+          for (q = 0.85; q >= 0.5; q -= 0.1) { data = c.toDataURL('image/jpeg', q); if (data.length <= PHOTO_MAX) break; }
+        }
+        if (!data || data.length > PHOTO_MAX) { busy(false); return setErr('Could not make the picture small enough. Please try another one.', 'photoErr'); }
+        api('savePhoto', { photo: data }).then(function (r) { busy(false); PHOTO = r.photo; drawTop(); go(PAGE); })
+          .catch(function (e) { fail(e, 'photoErr'); });
+      } catch (e) { busy(false); setErr('Could not process the picture. Please try another one.', 'photoErr'); }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function removePhoto() {
+  if (!confirm('Remove your profile picture?')) return;
+  busy(true);
+  api('savePhoto', { photo: '' }).then(function () { busy(false); PHOTO = ''; drawTop(); go(PAGE); }).catch(function (e) { fail(e, 'photoErr'); });
+}
+function pProfile() {
+  var p = REC.profile || {}, pr = REC.preference || { choices: [], career: '' };
+  var ch = pr.choices || [];
+  render(stepHead('Profile', 'Tell us about your school. Your school’s town is used to find nearby colleges.') + photoCard() + '<div class="card"><h2>School details</h2>' +
+    '<div class="grid2"><div><label for="p_school">Senior High School</label><input id="p_school" maxlength="100" value="' + esc(p.school) + '" placeholder="Name of your school"></div>' +
+    '<div><label for="p_town">Town or city of your school</label><select id="p_town">' + options(CFG.towns, p.town, 'Choose…') + '</select></div></div>' +
+    '<div class="grid3"><div><label for="p_strand">Strand or track</label><select id="p_strand">' + options(CFG.strands, p.strand, 'Choose…') + '</select></div>' +
+    '<div><label for="p_grade">Grade level</label><select id="p_grade">' + options(['12', '11'], p.gradeLevel || '12') + '</select></div>' +
+    '<div><label for="p_lrn">LRN <span class="muted">(optional)</span></label><input id="p_lrn" inputmode="numeric" maxlength="12" value="' + esc(p.lrn) + '"></div></div>' +
+    '<div id="err" class="err"></div><div class="actions"><button onclick="saveProfile()">Save profile</button></div></div>' +
+    '<div class="card"><h2>Your preferred courses</h2><p class="small muted" style="margin-top:-6px">Choose up to three courses you want, in order. This becomes the “Your preference” score.</p>' +
+    '<div class="grid3">' + [0, 1, 2].map(function (i) {
+      return '<div><label for="pref' + i + '">' + ['1st', '2nd', '3rd'][i] + ' choice</label><select id="pref' + i + '">' + options(CFG.programs, ch[i] || '', '— none —') + '</select></div>';
+    }).join('') + '</div>' +
+    '<label for="p_career">Dream job <span class="muted">(optional)</span></label><input id="p_career" maxlength="80" value="' + esc(pr.career) + '" placeholder="e.g. nurse, software developer">' +
+    '<div id="err2" class="err"></div><div class="actions"><button onclick="savePref()">Save preferences</button></div></div>');
+}
+function saveProfile() {
+  var d = { school: val('p_school'), town: val('p_town'), strand: val('p_strand'), gradeLevel: val('p_grade'), lrn: val('p_lrn') };
+  if (!d.school) return setErr('Please enter your school.');
+  if (!d.town) return setErr('Please choose the town of your school.');
+  if (!d.strand) return setErr('Please choose your strand or track.');
+  busy(true);
+  api('saveProfile', d).then(function (r) { REC = r; busy(false); setOk('Profile saved.'); toast('Profile saved ✓'); }).catch(function (e) { fail(e); });
+}
+function savePref() {
+  var choices = [val('pref0'), val('pref1'), val('pref2')].filter(String);
+  var uniq = choices.filter(function (c, i) { return choices.indexOf(c) === i; });
+  if (uniq.length !== choices.length) return setErr('Please choose different courses for each choice.', 'err2');
+  busy(true);
+  api('savePreference', { choices: choices, career: val('p_career') }).then(function (r) { REC = r; busy(false); setOk('Preferences saved.', 'err2'); toast('Preferences saved ✓'); })
+    .catch(function (e) { fail(e, 'err2'); });
+}
+
+// ------------------------------------------------------------ student: grades
+function pGrades() {
+  var g = REC.grades || {};
+  render(stepHead('Grades', 'Copy your Grade 12 averages from your report card (Form 138). Use numbers from 60 to 100.') + '<div class="card">' +
+    '<div class="grid2">' + CFG.gradeAreas.map(function (a) {
+      return '<div><label for="g_' + a.key + '">' + esc(a.label) + (a.optional ? ' <span class="muted">(optional)</span>' : '') + '</label>' +
+        '<input id="g_' + a.key + '" type="number" inputmode="decimal" min="60" max="100" step="0.01" placeholder="60–100" value="' + esc(g[a.key] === null || g[a.key] === undefined ? '' : g[a.key]) + '"></div>';
+    }).join('') + '</div><div id="err" class="err"></div><div class="actions"><button onclick="saveGrades()">Save grades</button></div></div>');
+}
+function saveGrades() {
+  var d = {}, msg = '';
+  CFG.gradeAreas.forEach(function (a) {
+    var v = val('g_' + a.key);
+    if (v === '') { if (!a.optional && !msg) msg = 'Please enter your ' + a.label + '.'; d[a.key] = ''; return; }
+    var n = Number(v);
+    if ((isNaN(n) || n < 60 || n > 100) && !msg) msg = a.label + ' must be from 60 to 100.';
+    d[a.key] = n;
+  });
+  if (msg) return setErr(msg);
+  busy(true);
+  api('saveGrades', d).then(function (r) { REC = r; busy(false); setOk('Grades saved.'); toast('Grades saved ✓'); }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ question helpers
+function progressBar(id, total) {
+  return '<div class="progress-sticky"><div class="row"><span>Your progress</span><span id="' + id + '_n">0 of ' + total + ' answered</span></div>' +
+    '<div class="bar" style="margin:0"><div id="' + id + '_b" style="width:0%"></div></div></div>';
+}
+function updateProgress(prefix, total, id) {
+  var n = 0; for (var i = 0; i < total; i++) if (document.querySelector('input[name="' + prefix + i + '"]:checked')) n++;
+  var t = $(id + '_n'), b = $(id + '_b');
+  if (t) t.textContent = n + ' of ' + total + ' answered'; if (b) b.style.width = Math.round(n / total * 100) + '%';
+}
+function optHtml(name, j, text, on) {
+  return '<label class="opt' + (on ? ' sel' : '') + '" onclick="markSel(this)"><input type="radio" name="' + name + '" value="' + j + '"' + (on ? ' checked' : '') + '>' +
+    '<span class="L">' + LETTERS[j] + '</span><span>' + esc(text) + '</span></label>';
+}
+function markSel(lbl) {
+  var group = lbl.parentNode.querySelectorAll('.opt');
+  for (var i = 0; i < group.length; i++) group[i].classList.remove('sel');
+  lbl.classList.add('sel');
+  var input = lbl.querySelector('input'); if (input) input.checked = true;
+  if (markSel.after) markSel.after();
+}
+function radioVal(name) { var el = document.querySelector('input[name="' + name + '"]:checked'); return el ? Number(el.value) : null; }
+function firstMissing(answers, prefix) {
+  var m = answers.indexOf(null);
+  if (m !== -1) { var el = document.querySelector('input[name="' + prefix + m + '"]'); if (el) el.closest('.q').scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  return m;
+}
+
+// ------------------------------------------------------------ student: examination
+function pExam(retake) {
+  var ex = REC.exam;
+  markSel.after = null;
+  if (ex && !retake) {
+    var rows = Object.keys(CFG.examAreas).map(function (k) {
+      var v = ex.areas[k];
+      return '<tr><td>' + esc(CFG.examAreas[k]) + '</td><td style="width:40%"><div class="bar" style="margin:0"><div style="width:' + (v || 0) + '%"></div></div></td><td><b>' + (v === undefined ? '–' : v + '%') + '</b></td><td class="hide-m">' +
+        (ex.ncae && ex.ncae[k] ? esc(ex.ncae[k]) : '–') + '</td></tr>';
+    }).join('');
+    render(stepHead('Examination') + '<div class="card"><p style="margin-top:0">You answered <b>' + ex.correct + ' of ' + ex.total + '</b> questions correctly' +
+      (ex.takenAt ? ' on ' + esc(fmtDay(ex.takenAt)) : '') + '.</p>' +
+      '<div style="overflow-x:auto"><table><tr><th>Area</th><th></th><th>Score</th><th class="hide-m">' + esc(ex.ncaeSource || 'NCAE/PACT') + ' percentile</th></tr>' + rows + '</table></div>' +
+      '<div class="actions"><button class="sec" onclick="pExam(true)">' + icon('refresh') + 'Retake the examination</button></div></div>');
+    return;
+  }
+  var total = CFG.exam.length;
+  var qs = CFG.exam.map(function (q, i) {
+    return '<div class="q"><div class="meta">' + (i + 1) + ' of ' + total + ' · ' + esc(q.area) + '</div><div class="stem">' + esc(q.q) + '</div>' +
+      q.c.map(function (c, j) { return optHtml('ex' + i, j, c, false); }).join('') + '</div>';
+  }).join('');
+  render(stepHead('Examination', 'Answer on your own. There is no time limit. Your scores show which areas are your strengths.') + progressBar('exP', total) + qs +
+    '<div class="card"><h2>Official results <span class="muted" style="font-weight:500">(optional)</span></h2><p class="small muted" style="margin-top:-6px">If you took the NCAE or a CEM test such as PACT, ' +
+    'type the percentile ranks from your certificate. Your counselor will check them.</p>' +
+    '<label for="ncaeSrc">Source</label><select id="ncaeSrc"><option value="">I have no official result</option><option>NCAE</option><option>CEM-PACT</option></select>' +
+    '<div class="grid2">' + CFG.ncaeFields.map(function (f) {
+      return '<div><label for="n_' + f.key + '">' + esc(f.label) + '</label><input id="n_' + f.key + '" type="number" inputmode="numeric" min="1" max="99" placeholder="1–99"></div>';
+    }).join('') + '</div>' +
+    '<div id="err" class="err"></div><div class="actions"><button onclick="submitExam()">Submit examination</button>' +
+    (ex ? '<button class="sec" onclick="pExam()">Cancel</button>' : '') + '</div></div>');
+  markSel.after = function () { updateProgress('ex', total, 'exP'); };
+}
+function submitExam() {
+  var answers = CFG.exam.map(function (q, i) { return radioVal('ex' + i); });
+  var missing = firstMissing(answers, 'ex');
+  if (missing !== -1) return setErr('Please answer question ' + (missing + 1) + '.');
+  var src = val('ncaeSrc'), ncae = {}, bad = '';
+  if (src) CFG.ncaeFields.forEach(function (f) {
+    var v = val('n_' + f.key); if (v === '') return;
+    var n = Number(v); if (isNaN(n) || n < 1 || n > 99) bad = 'Percentile ranks must be from 1 to 99.'; ncae[f.key] = n;
+  });
+  if (bad) return setErr(bad);
+  busy(true, 'Checking your answers…');
+  api('submitExam', { answers: answers, ncaeSource: src, ncae: ncae }).then(function (r) { REC = r; busy(false); pExam(); toast('Examination submitted ✓'); }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ student: skills
+function pSkills() {
+  var s = REC.skills || {};
+  markSel.after = null;
+  render(stepHead('Skills', 'Rate yourself honestly: 1 = not good at it yet, 5 = very good at it.') + '<div class="card">' +
+    CFG.skills.map(function (k) {
+      return '<div class="skill"><div class="nm">' + esc(k.label) + '</div><div class="rate">' +
+        [1, 2, 3, 4, 5].map(function (n) {
+          var on = Number(s[k.key]) === n;
+          return '<label class="' + (on ? 'sel' : '') + '" onclick="rateSel(this)"><input type="radio" name="sk_' + k.key + '" value="' + n + '"' + (on ? ' checked' : '') + '>' + n + '</label>';
+        }).join('') + '</div><div class="scale"><span>Not yet</span><span>Very good</span></div></div>';
+    }).join('') + '<div id="err" class="err"></div><div class="actions"><button onclick="saveSkills()">Save skills</button></div></div>');
+}
+function rateSel(lbl) {
+  var all = lbl.parentNode.querySelectorAll('label');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('sel');
+  lbl.classList.add('sel'); lbl.querySelector('input').checked = true;
+}
+function saveSkills() {
+  var d = {}, missing = '';
+  CFG.skills.forEach(function (k) { var v = radioVal('sk_' + k.key); if (v === null && !missing) missing = k.label; d[k.key] = v; });
+  if (missing) return setErr('Please rate "' + missing + '".');
+  busy(true);
+  api('saveSkills', d).then(function (r) { REC = r; busy(false); setOk('Skills saved.'); toast('Skills saved ✓'); }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ student: personality (RIASEC)
+function pPersonality() {
+  var prev = REC.personality ? REC.personality.answers : [];
+  var total = CFG.interest.length;
+  render(stepHead('Personality and interests', 'Choose the activity you would enjoy most. There are no right or wrong answers.') + progressBar('piP', total) +
+    CFG.interest.map(function (it, i) {
+      return '<div class="q"><div class="meta">' + (i + 1) + ' of ' + total + '</div><div class="stem">' + esc(it.stem) + '</div>' +
+        it.options.map(function (o, j) { return optHtml('pi' + i, j, o, prev[i] === j); }).join('') + '</div>';
+    }).join('') + '<div class="card"><div id="err" class="err"></div><div class="actions" style="margin-top:0"><button onclick="savePersonality()">Save answers</button></div></div>');
+  markSel.after = function () { updateProgress('pi', total, 'piP'); };
+  updateProgress('pi', total, 'piP');
+}
+function savePersonality() {
+  var answers = CFG.interest.map(function (it, i) { return radioVal('pi' + i); });
+  var missing = firstMissing(answers, 'pi');
+  if (missing !== -1) return setErr('Please answer question ' + (missing + 1) + '.');
+  busy(true);
+  api('savePersonality', { answers: answers }).then(function (r) { REC = r; busy(false); setOk('Answers saved. Next: Results.'); toast('Answers saved ✓'); }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ recommendations (shared by student + counselor)
+function recCards(res, o, keyPrefix, endorsement) {
+  var w = res.weights;
+  var keys = ['grades', 'exam', 'skills', 'interests', 'preference'];
+  var cards = res.top.map(function (p, i) {
+    var tiles = keys.map(function (k) {
+      var t = p.tiles[k];
+      return '<div class="tile"><div>' + esc(CFG.weightLabels[k]) + '</div><div style="margin:4px 0 2px"><span class="badge b-' + t.level + '">' + t.level +
+        '</span><span class="v">' + t.score + '</span></div><div class="tiny muted">adds ' + t.points + ' pts</div></div>';
+    }).join('');
+    var pe = p.persistence;
+    var persist = pe ? '<div class="persist">Historical persistence estimate (AI model): <span class="badge b-' + pe.level + '">' + pe.level + '</span> p = ' + pe.p +
+      ' · based on ' + pe.n + ' past students' + (res.demoModel ? ' (sample data)' : '') + ' · main factors: ' +
+      pe.factors.map(function (f) { return esc(f.name) + ' (' + signed(f.effect) + ')'; }).join(', ') +
+      '. This describes past patterns, not causes, and does not change the ranking.</div>'
+      : '<div class="persist">Historical persistence estimate (AI model): not enough past student data for this program yet.</div>';
+    var isEnd = endorsement && endorsement.status === 'Endorsed' && endorsement.program === p.code;
+    var n = schoolsFor(p.code, o).length;
+    return '<div class="card rec' + (isEnd ? ' endorsed' : '') + '">' + (isEnd ? '<div class="tag">' + icon('check') + ' Endorsed course</div>' : '') +
+      '<div class="rec-top"><div class="rank' + (i === 0 ? ' gold' : '') + '">' + (i + 1) + '</div><div class="t">' + esc(p.name) + '<small>' + esc(p.code) + '</small></div>' +
+      '<div class="score"><b>' + p.total + '</b><small>out of 100</small></div></div>' +
+      '<div class="bar"><div style="width:' + Math.min(100, p.total) + '%"></div></div><div class="tiles">' + tiles + '</div>' +
+      (p.reasons.length ? '<ul class="reasons">' + p.reasons.map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('') + '</ul>' : '') + persist +
+      '<h3>' + n + ' school' + (n === 1 ? '' : 's') + ' offer this course · nearest first</h3>' + schoolList(p.code, o, keyPrefix + p.code, 3) + '</div>';
+  }).join('');
+  var all = res.all.map(function (p) {
+    return '<div class="allrow"><div>' + esc(p.name) + '</div><div class="bar"><div style="width:' + Math.min(100, p.total) + '%"></div></div><div><b>' + p.total + '</b></div></div>';
+  }).join('');
+  var endInTop = endorsement && endorsement.status === 'Endorsed' && res.top.some(function (p) { return p.code === endorsement.program; });
+  return '<div class="small muted">Generated ' + esc(fmtDate(res.generatedAt)) + ' · Weights: ' +
+    keys.map(function (k) { return esc(CFG.weightLabels[k]) + ' ' + w[k]; }).join(', ') + '</div>' +
+    (endorsement && endorsement.status === 'Endorsed' && !endInTop ? '<h2>Endorsed course</h2>' + endorsedCard(endorsement, o, keyPrefix + 'end', 3) : '') +
+    '<h2>Your top 5 courses</h2>' + cards +
+    '<h2>All programs</h2><div class="card">' + all + '</div>';
+}
+function pRecs() {
+  var r = REC.recommendation, o = myOrigin();
+  render('<div class="head"><div><h1>Your results</h1><p class="sub">Your best-matched courses and every school in our list that offers them.</p></div><div class="actions noprint" style="margin:0">' +
+    '<button onclick="generate()">' + icon('refresh') + 'Update</button><button class="sec" onclick="downloadPdf()">' + icon('download') + 'PDF</button>' +
+    '<button class="sec" onclick="window.print()">' + icon('print') + 'Print</button></div></div>' +
+    '<div class="note">' + icon('shield') + '<div>Recommendations are guidance only. They do not guarantee admission or eligibility, and you decide which program ' +
+    'and school to apply to. Check program availability and requirements with each school.</div></div><div id="err" class="err"></div>' +
+    (r ? locBar(o) + recCards(r, o, 'r-', REC.endorsement) : '<div class="card empty">' + icon('star') + '<p>Finish your Profile, Grades, Examination, Skills and Personality steps, then tap <b>Update</b>.</p>' +
+      '<button onclick="generate()">Get my recommendations</button></div>'));
+  REDRAW = pRecs;
+}
+function generate() {
+  busy(true, 'Finding your best courses…');
+  api('generate').then(function (r) { REC = r; busy(false); pRecs(); }).catch(function (e) { fail(e); });
+}
+function downloadPdf(userId) {
+  busy(true, 'Making your PDF…');
+  api('reportPdf', userId ? { userId: userId } : {}).then(function (f) {
+    busy(false);
+    try {
+      var bin = atob(f.base64), bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      var url = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      var a = document.createElement('a'); a.href = url; a.download = f.filename; document.body.appendChild(a); a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 2000);
+      toast('Your PDF is downloading.');
+    } catch (e) { setErr('Download is blocked on this device. Use Print and choose “Save as PDF”.'); }
+  }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ schools page (students + counselors)
+function pSchools() {
+  var o = myOrigin(), e = REC ? REC.endorsement : null, r = REC ? REC.recommendation : null;
+  var quick = [];
+  if (e && e.status === 'Endorsed' && e.program) quick.push({ code: e.program, star: true });
+  (r && r.top ? r.top.slice(0, 3) : []).forEach(function (p) { quick.push({ code: p.code }); });
+  (REC && REC.preference && REC.preference.choices || []).forEach(function (c) { quick.push({ code: c }); });
+  var seen = {}; quick = quick.filter(function (q) { if (seen[q.code]) return false; seen[q.code] = 1; return true; });
+  if (SCH.code === '' && SCH.picked !== true) SCH.code = quick.length ? quick[0].code : '';
+  var code = SCH.code, list = schoolsFor(code, o);
+  var near = list.filter(function (s) { return s.km !== null && s.km <= CFG.nearbyKm; });
+  var shown = SCH.nearbyOnly ? near : list;
+  render('<div class="head"><div><h1>Schools</h1><p class="sub">Every school in our list that offers a course, nearest to you first.</p></div></div>' +
+    (e && e.status === 'Endorsed' && code === e.program ? '<div class="note" style="background:var(--ok-l);border-color:#a7f3d0;color:#065f46">' + icon('check') +
+      '<div><b>' + esc(progName(e.program)) + '</b> is the course your counselor endorsed. These are all the schools in our list that offer it.</div></div>' : '') +
+    (quick.length ? '<div class="pick">' + quick.map(function (q) {
+      return '<button class="' + (q.code === code ? 'on' : '') + '" onclick="SCH.code=\'' + esc(q.code) + '\';SCH.picked=true;pSchools()">' + (q.star ? '<span class="star">★</span> ' : '') + esc(q.code) + '</button>';
+    }).join('') + '</div>' : '') +
+    '<div class="card" style="padding:14px"><label for="sch_code" style="margin-top:0">Course</label><select id="sch_code" onchange="SCH.code=this.value;SCH.picked=true;pSchools()">' +
+    '<option value=""' + (code ? '' : ' selected') + '>Any course (all schools)</option>' + options(CFG.programs, code) + '</select></div>' +
+    locBar(o) +
+    '<div class="stats"><div class="stat"><b>' + list.length + '</b><span>school' + (list.length === 1 ? '' : 's') + (code ? ' offer it' : ' in our list') + '</span></div>' +
+    '<div class="stat"><b>' + near.length + '</b><span>within ' + CFG.nearbyKm + ' km</span></div>' +
+    '<div class="stat"><b>' + (list.length && list[0].km !== null ? '~' + Math.round(list[0].km) + ' km' : '–') + '</b><span>nearest</span></div></div>' +
+    '<div class="seg" style="max-width:340px;margin-bottom:12px"><button class="' + (SCH.nearbyOnly ? '' : 'on') + '" onclick="SCH.nearbyOnly=false;pSchools()">All (' + list.length + ')</button>' +
+    '<button class="' + (SCH.nearbyOnly ? 'on' : '') + '" onclick="SCH.nearbyOnly=true;pSchools()">Nearby only (' + near.length + ')</button></div>' +
+    (shown.length ? '<div class="school-list">' + shown.map(function (s) { return schoolCard(s, code, o); }).join('') + '</div>'
+      : '<div class="card empty">' + icon('school') + '<p>' + (list.length ? 'No school offering this course is within ' + CFG.nearbyKm + ' km. Tap <b>All</b> to see schools farther away.' : 'No school in our list offers this course yet. Ask your guidance counselor.') + '</p></div>') +
+    '<p class="tiny muted" style="margin-top:14px">Distances are straight-line estimates between town centres. School lists were checked in Nov 2026 where a source was found; always confirm programs, slots, and requirements with the school.</p>');
+  REDRAW = pSchools;
+}
+
+// ------------------------------------------------------------ my record
+function recordSummary(R) {
+  var p = R.profile, g = R.grades, ex = R.exam, sk = R.skills, pe = R.personality, pr = R.preference;
+  var h = '<div class="card"><h2>Profile</h2>' + (p ? '<p>' + esc(p.school) + ' · ' + esc(p.town) + ' · ' + esc(p.strand) + ' · Grade ' + esc(p.gradeLevel) +
+    (p.lrn ? ' · LRN ' + esc(p.lrn) : '') + '</p>' : '<p class="muted">Not filled in yet.</p>') +
+    '<p style="margin-bottom:0"><b>Preferred courses:</b> ' + (pr && pr.choices && pr.choices.length ? pr.choices.map(function (c, i) { return (i + 1) + '. ' + esc(progName(c)); }).join(' · ') : '<span class="muted">none</span>') +
+    (pr && pr.career ? ' · <b>Dream job:</b> ' + esc(pr.career) : '') + '</p></div>';
+  h += '<div class="card"><h2>Grades</h2>' + (g ? '<table>' + CFG.gradeAreas.map(function (a) {
+    return '<tr><td>' + esc(a.label) + '</td><td><b>' + (g[a.key] === null || g[a.key] === undefined ? '–' : esc(g[a.key])) + '</b></td></tr>'; }).join('') + '</table>' :
+    '<p class="muted">Not filled in yet.</p>') + '</div>';
+  h += '<div class="card"><h2>Examination</h2>' + (ex ? '<p>' + ex.correct + ' of ' + ex.total + ' correct.</p><table>' +
+    Object.keys(CFG.examAreas).map(function (k) { return '<tr><td>' + esc(CFG.examAreas[k]) + '</td><td><b>' + (ex.areas[k] === undefined ? '–' : ex.areas[k] + '%') + '</b>' +
+      (ex.ncae && ex.ncae[k] ? ' · ' + esc(ex.ncaeSource) + ' percentile ' + esc(ex.ncae[k]) : '') + '</td></tr>'; }).join('') + '</table>' :
+    '<p class="muted">Not taken yet.</p>') + '</div>';
+  h += '<div class="card"><h2>Skills</h2>' + (sk ? '<div class="chips">' + CFG.skills.map(function (k) { return '<span class="chip">' + esc(k.label) + ': <b>' + esc(sk[k.key]) + '</b></span>'; }).join('') + '</div>' :
+    '<p class="muted">Not rated yet.</p>') + '</div>';
+  var riasec = R.recommendation ? R.recommendation.riasec : null;
+  h += '<div class="card"><h2>Personality and interests</h2>' + (pe ? (riasec ? '<p><b>Interest code:</b> ' + esc(R.recommendation.hollandCode) + '</p><div class="chips">' +
+    Object.keys(CFG.riasecNames).map(function (t) { return '<span class="chip">' + esc(CFG.riasecNames[t]) + ' ' + Math.round(riasec[t] * 100) + '%</span>'; }).join('') + '</div>' :
+    '<p>Answers saved. Update your results to see your interest code.</p>') : '<p class="muted">Not answered yet.</p>') + '</div>';
+  return h;
+}
+function pRecord() {
+  var e = REC.endorsement;
+  render('<div class="head"><div><h1>My record</h1><p class="sub">Everything you have entered, in one place.</p></div><div class="actions noprint" style="margin:0"><button class="sec" onclick="window.print()">' + icon('print') + 'Print</button></div></div>' +
+    '<div class="card"><h2>Counselor review</h2><p><span class="pill ' + esc(e.status.split(' ')[0]) + '">' + esc(e.status) + '</span>' +
+    (e.status === 'Endorsed' ? ' &nbsp;' + esc(progName(e.program)) + ' (by ' + esc(e.counselor) + ')' : '') + '</p>' + (e.notes ? '<p>' + esc(e.notes) + '</p>' : '') +
+    '<p class="small muted" style="margin-bottom:0">Last updated ' + esc(fmtDate(REC.updatedAt)) + '</p></div>' + recordSummary(REC));
+}
+
+// ------------------------------------------------------------ announcements
+function pNews() {
+  busy(true);
+  api('announcements').then(function (list) {
+    busy(false); UNREAD = 0; drawTop();
+    var form = USER.role === 'counselor' ? '<div class="card"><h2>Post an announcement</h2><label for="an_t">Title</label><input id="an_t" maxlength="120">' +
+      '<label for="an_b">Message</label><textarea id="an_b" maxlength="2000"></textarea><div id="err" class="err"></div><div class="actions"><button onclick="postNews()">Post</button></div></div>' : '';
+    render('<h1>Announcements</h1><p class="sub">News from your guidance office.</p>' + form + (list.length ? list.map(function (a) {
+      return '<div class="card news-item"><h2 style="margin-bottom:2px">' + esc(a.title) + '</h2><div class="when">' + esc(a.postedBy) + ' · ' + esc(fmtDate(a.postedAt)) + '</div>' +
+        '<p style="white-space:pre-wrap;margin-bottom:0">' + esc(a.body) + '</p>' +
+        (USER.role === 'counselor' ? '<div class="actions"><button class="danger sm" onclick="delNews(\'' + esc(a.id) + '\')">Delete</button></div>' : '') + '</div>';
+    }).join('') : '<div class="card empty">' + icon('bell') + '<p>No announcements yet.</p></div>'));
+  }).catch(function (e) { fail(e); });
+}
+function postNews() {
+  var t = val('an_t'), b = val('an_b');
+  if (t.length < 3) return setErr('Please enter a title.');
+  if (b.length < 3) return setErr('Please enter the message.');
+  busy(true);
+  api('postAnnouncement', { title: t, body: b }).then(function () { busy(false); pNews(); toast('Posted ✓'); }).catch(function (e) { fail(e); });
+}
+function delNews(id) {
+  if (!confirm('Delete this announcement?')) return;
+  busy(true);
+  api('deleteAnnouncement', { id: id }).then(function () { busy(false); pNews(); }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ account: face sign-in + password
+function faceCard() {
+  var support = '<p class="small muted">Works with Face ID or Touch ID on iPhone and iPad, face or fingerprint unlock on Android phones (Samsung, Xiaomi, Oppo, vivo, realme, Huawei and others), ' +
+    'Windows Hello on Windows laptops (face, fingerprint, or PIN), and Touch ID on MacBooks. If a device has no face or fingerprint unlock, it uses the screen lock PIN instead. ' +
+    'Your face and fingerprint stay on your device; CourseMatch never receives them.</p>';
+  if (!CFG.appUrl) return '<div class="card"><h2>' + icon('face') + ' Biometric verification</h2><p class="muted">Not turned on for CourseMatch yet. Ask your administrator.</p>' + support + '</div>';
+  if (!FACE.here) return '<div class="card"><h2>' + icon('face') + ' Biometric verification</h2><p>To use your face or fingerprint, open CourseMatch from its app link, sign in, and turn it on there.</p>' +
+    '<a class="btn" href="' + esc(CFG.appUrl) + '" target="_top">' + icon('arrow') + 'Open the CourseMatch app</a>' + support + '</div>';
+  return '<div class="card"><h2>' + icon('face') + ' Biometric verification</h2><p class="small muted" style="margin-top:-6px">Asked at every sign-in, and again after ' + LOCK_MINUTES + ' minutes away from the app. These devices can verify you:</p><div id="devList" class="muted small">Loading your devices…</div>' +
+    (FACE.api ? '<div class="actions">' + (faceOnHere() ? '<span class="pill Endorsed">' + icon('check') + ' On for this device</span>' :
+      '<button id="faceSetupBtn" class="face-btn" disabled onclick="faceSetup(drawDevices)">' + bioIcon() + 'Turn on ' + esc(FACE.label) + ' for this device</button>') + '</div>' :
+      '<p class="err">This browser does not support face or fingerprint sign-in. Try Chrome, Safari, Edge or Samsung Internet.</p>') + support + '</div>';
+}
+function faceScanCard() {
+  var head = '<div class="card"><h2>' + icon('face') + ' Camera face scan</h2>';
+  if (!FACE.here) return head + '<p>The face scan works in the CourseMatch app. Open it from its app link.</p>' +
+    (CFG.appUrl ? '<a class="btn" href="' + esc(CFG.appUrl) + '" target="_top">' + icon('arrow') + 'Open the CourseMatch app</a>' : '') + '</div>';
+  return head + '<p class="small muted" style="margin-top:-6px">Your selfie scan is checked at every sign-in. Works with the front camera of Android phones, iPhone and iPad, ' +
+    'and the webcam of any laptop (Windows, Mac, Chromebook). Only a face print (numbers) is saved, never your picture.</p>' +
+    '<div class="actions">' + (FS.enrolled ? '<span class="pill Endorsed">' + icon('check') + ' Face scan saved</span>' : '<span class="pill Pending">Not set up</span>') +
+    (camSupported() ? '<button class="face-btn" onclick="rescanFace()">' + icon('face') + (FS.enrolled ? 'Scan my face again' : 'Set up face scan') + '</button>'
+      : '<span class="err" style="margin:0">This browser cannot open the camera.</span>') + '</div></div>';
+}
+function drawDevices(list) {
+  var el = $('devList'); if (!el) return;
+  var mine = loadJson('cm_face');
+  el.className = '';
+  el.innerHTML = list.length ? list.map(function (d) {
+    var thisOne = mine && mine.credId === d.id;
+    return '<div class="device"><div class="ic">' + icon(/Windows|Mac|Computer/.test(d.device) ? 'laptop' : 'phone') + '</div><div class="t"><b>' + esc(d.device) + (thisOne ? ' <span class="chip near">This device</span>' : '') + '</b>' +
+      '<span class="small muted">Added ' + esc(fmtDay(d.createdAt)) + (d.lastUsedAt ? ' · last used ' + esc(fmtDay(d.lastUsedAt)) : '') + '</span></div>' +
+      '<button class="danger sm" onclick="removeDevice(\'' + esc(d.id) + '\')">Remove</button></div>';
+  }).join('') : '<p class="muted small" style="margin:0">No devices yet.</p>';
+}
+function removeDevice(id) {
+  if (!confirm('Remove face sign-in for this device? You can still sign in with your password.')) return;
+  busy(true);
+  api('passkeyRemove', { id: id }).then(function (list) {
+    busy(false); var mine = loadJson('cm_face'); if (mine && mine.credId === id) store('cm_face', null);
+    pPassword(); toast('Device removed.');
+  }).catch(function (e) { fail(e); });
+}
+function emailCard() {
+  return '<div class="card" style="max-width:520px"><h2>✉️ Email for password reset</h2>' +
+    (EMAIL ? '<p style="margin-top:-4px">Current email: <b>' + esc(EMAIL) + '</b></p>' : '<div class="note">' + icon('shield') + '<div>Add an email so you can reset your password if you forget it.</div></div>') +
+    '<label for="em_new">' + (EMAIL ? 'New email' : 'Email address') + '</label><input id="em_new" type="email" autocomplete="email" autocapitalize="none" placeholder="you@example.com">' +
+    '<label for="em_pw">Your password</label><input id="em_pw" type="password" autocomplete="current-password">' +
+    '<div id="emErr" class="err"></div><div class="actions"><button onclick="saveEmail()">Save email</button></div></div>';
+}
+function saveEmail() {
+  var e = val('em_new'), p = $('em_pw').value;
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(e)) return setErr('Please enter a valid email address.', 'emErr');
+  if (!p) return setErr('Please enter your password.', 'emErr');
+  busy(true);
+  api('setEmail', { email: e, password: p }).then(function (r) { busy(false); EMAIL = r.email; pPassword(); toast('Email saved ✓'); }).catch(function (x) { fail(x, 'emErr'); });
+}
+function pPassword() {
+  render('<h1>Account & sign-in</h1><p class="sub">Manage your picture, face sign-in, email, and password.</p>' + photoCard() + faceScanCard() + emailCard() +
+    '<div class="card" style="max-width:520px"><h2>' + icon('lock') + ' Change password</h2><label for="pw_o">Current password</label><input id="pw_o" type="password" autocomplete="current-password">' +
+    '<label for="pw_n">New password</label><input id="pw_n" type="password" autocomplete="new-password">' +
+    '<label for="pw_c">Type the new password again</label><input id="pw_c" type="password" autocomplete="new-password">' +
+    '<div id="err" class="err"></div><div class="actions"><button onclick="changePw()">Change password</button></div></div>');
+}
+function changePw() {
+  var o = $('pw_o').value, n = $('pw_n').value, c = $('pw_c').value;
+  if (n.length < 6) return setErr('New password must be at least 6 characters.');
+  if (n !== c) return setErr('The new passwords do not match.');
+  busy(true);
+  api('changePassword', { oldPassword: o, newPassword: n }).then(function () { busy(false); setOk('Password changed.'); $('pw_o').value = $('pw_n').value = $('pw_c').value = ''; })
+    .catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ counselor
+function pStudents() {
+  busy(true);
+  api('listStudents').then(function (list) { busy(false); CS.list = list; drawStudents(); }).catch(function (e) { fail(e); });
+}
+function drawStudents() {
+  var q = CS.search.toLowerCase();
+  var list = CS.list.filter(function (s) {
+    return (CS.filter === 'ALL' || s.strand === CS.filter) &&
+      (!q || (s.name + ' ' + s.school + ' ' + s.town).toLowerCase().indexOf(q) !== -1);
+  });
+  var count = function (st) { return CS.list.filter(function (s) { return s.status === st; }).length; };
+  render('<div class="hero">' + avatar(PHOTO, USER.name, 'xl') + '<div style="position:relative;z-index:1"><h1>Hi, ' + esc(USER.name.split(' ')[0]) + '! 👋</h1>' +
+    '<div class="who"><span><b>' + esc(USER.name) + '</b></span><span>Guidance counselor</span><span>@' + esc(USER.username) + '</span>' +
+    (FS.verified ? '<span class="vpill">' + icon('check') + 'Face verified</span>' : '') + '</div><p style="margin:0">Review results and endorse a course for each student.</p></div></div>' +
+    '<h1>Students</h1>' +
+    '<div class="stats"><div class="stat"><b>' + CS.list.length + '</b><span>students</span></div><div class="stat"><b>' + count('Endorsed') + '</b><span>endorsed</span></div>' +
+    '<div class="stat"><b>' + count('Pending') + '</b><span>pending</span></div></div>' +
+    '<div class="card"><div class="grid2"><div><label for="f_s" style="margin-top:0">Strand or track</label><select id="f_s" onchange="CS.filter=this.value;drawStudents()">' +
+    options(['ALL'].concat(CFG.strands), CS.filter) + '</select></div><div><label for="f_q" style="margin-top:0">Search name, school, or town</label><input id="f_q" value="' + esc(CS.search) +
+    '" placeholder="Type and press Enter" onkeydown="if(event.key===\'Enter\'){CS.search=this.value;drawStudents()}"></div></div>' +
+    '<div class="actions"><button class="sec" onclick="CS.search=val(\'f_q\');drawStudents()">Search</button><button class="sec" onclick="pStudents()">' + icon('refresh') + 'Refresh</button></div></div>' +
+    '<div class="card" style="padding:0;overflow:hidden">' + (list.length ? '<div style="overflow-x:auto"><table><tr><th>Student</th><th class="hide-m">Strand</th><th class="hide-m">Steps</th><th>Top course</th><th>Status</th></tr>' +
+    list.map(function (s) {
+      return '<tr class="click" onclick="openStudent(\'' + esc(s.userId) + '\')"><td><b>' + esc(s.name) + '</b><br><span class="small muted">' + esc(s.school) + (s.town ? ' · ' + esc(s.town) : '') +
+        '</span></td><td class="hide-m">' + esc(s.strand) + '</td><td class="hide-m">' + s.done + '/5</td><td>' + (s.topProgram ? esc(s.topProgram) + ' <span class="muted">(' + s.topScore + ')</span>' : '<span class="muted">–</span>') +
+        '</td><td><span class="pill ' + esc(String(s.status).split(' ')[0]) + '">' + esc(s.status) + '</span></td></tr>';
+    }).join('') + '</table></div>' : '<div class="empty">' + icon('users') + '<p>No students yet.</p></div>') + '</div>');
+}
+function openStudent(id) {
+  busy(true);
+  api('getStudent', { userId: id }).then(function (R) { busy(false); CS.student = R; PAGE = 'student'; drawTop(); drawStudent(); }).catch(function (e) { fail(e); });
+}
+function drawStudent() {
+  var R = CS.student, e = R.endorsement;
+  var o = townPoint(R.profile ? R.profile.town : '') || myOrigin();
+  render('<div class="head"><div style="display:flex;align-items:center;gap:14px">' + avatar(R.photo, R.name, 'md') + '<div><a class="small" onclick="go(\'students\')">← All students</a><h1 style="margin:0">' + esc(R.name) + '</h1></div></div>' +
+    '<div class="actions noprint" style="margin:0">' + (R.recommendation ? '<button class="sec" onclick="downloadPdf(\'' + esc(R.userId) + '\')">' + icon('download') + 'PDF</button>' : '') +
+    '<button class="sec" onclick="window.print()">' + icon('print') + 'Print</button></div></div>' +
+    '<div class="card"><h2>Counselor decision</h2><div class="grid2"><div><label for="e_st">Status</label><select id="e_st">' +
+    options(['Pending', 'Endorsed', 'Needs Revision'], e.status) + '</select></div><div><label for="e_pg">Endorsed program</label><select id="e_pg" onchange="previewEndorse(this.value)">' +
+    options(CFG.programs, e.program, 'Choose…') + '</select></div></div><div id="endPreview" class="small muted" style="margin-top:8px"></div>' +
+    '<label for="e_nt">Notes for the student</label><textarea id="e_nt" maxlength="1000">' + esc(e.notes) + '</textarea>' +
+    '<p class="small muted">Before endorsing, check any NCAE/PACT results against the student’s certificate and talk with the student.</p>' +
+    '<div id="err" class="err"></div><div class="actions"><button onclick="saveEndorse()">Save decision</button></div></div>' +
+    '<div class="card noprint"><h2>' + icon('face') + ' Sign-in help</h2><p class="small muted" style="margin-top:-6px">Face scan: <b>' + (R.face ? 'saved' : 'not set up yet') + '</b>. ' +
+    'If the student can no longer pass the face scan (new phone, injury, big change in looks), reset it. This also removes their saved Face ID / fingerprint devices. ' +
+    'They sign in with their password and scan their face again.</p><div id="rfErr" class="err"></div>' +
+    '<div class="actions"><button class="danger" onclick="resetStudentFace(\'' + esc(R.userId) + '\')">Reset face scan</button></div></div>' +
+    (e.status === 'Endorsed' ? endorsedCard(e, o, 'c-end', 4) : '') +
+    recordSummary(R) + (R.recommendation ? recCards(R.recommendation, o, 'c-', e) : '<div class="card empty">' + icon('star') + '<p>This student has no recommendations yet.</p></div>'));
+  previewEndorse(e.program);
+  REDRAW = drawStudent;
+}
+function resetStudentFace(id) {
+  if (!confirm('Reset this student\'s face scan and saved devices? Only do this after checking it is really the student asking.')) return;
+  busy(true);
+  api('resetFace', { userId: id }).then(function () { busy(false); CS.student.face = false; drawStudent(); toast('Face scan reset ✓'); })
+    .catch(function (e) { fail(e, 'rfErr'); });
+}
+function previewEndorse(code) {
+  var el = $('endPreview'); if (!el) return;
+  if (!code) { el.textContent = ''; return; }
+  var R = CS.student, o = townPoint(R.profile ? R.profile.town : '') || myOrigin(), list = schoolsFor(code, o);
+  var near = list.filter(function (s) { return s.km !== null && s.km <= CFG.nearbyKm; });
+  el.innerHTML = icon('school') + ' ' + list.length + ' school' + (list.length === 1 ? '' : 's') + ' offer ' + esc(code) + '; ' + near.length + ' within ' + CFG.nearbyKm + ' km of ' + esc(originText(o)) +
+    (list[0] ? ' (nearest: ' + esc(list[0].name + (list[0].campus ? ' – ' + list[0].campus : '')) + ', ~' + Math.round(list[0].km) + ' km).' : '.');
+}
+function saveEndorse() {
+  var d = { userId: CS.student.userId, status: val('e_st'), program: val('e_pg'), notes: val('e_nt') };
+  if (d.status === 'Endorsed' && !d.program) return setErr('Please choose the program to endorse.');
+  busy(true);
+  api('endorse', d).then(function (R) { busy(false); R.photo = CS.student.photo; CS.student = R; drawStudent(); toast('Decision saved ✓'); }).catch(function (e) { fail(e); });
+}
+
+// ------------------------------------------------------------ start
+(function start() {
+  busy(true);
+  LOC = loadJson('cm_loc');
+  api('config').then(function (c) {
+    CFG = c;
+    return faceInit();
+  }).then(function () {
+    TOKEN = load('cm_token');
+    if (!FACE.here && CFG.appUrl && CFG.faceRequired) { busy(false); return showLauncher(); }
+    if (TOKEN && verifyReady()) {
+      // On the app page, opening the app always asks for Face ID / fingerprint, even if you are still signed in.
+      return api('me').then(function (m) { busy(false); PENDING = m.user; faceStep(m.pending ? 'verify' : 'verify'); }).catch(function (e) { fail(e); });
+    }
+    if (TOKEN) return loadMe();
+    busy(false); showAuth('login');
+  }).catch(function (e) {
+    busy(false);
+    render('<div class="card err">Could not load CourseMatch: ' + esc(e.message) + '<br>Did you run setup() in the script editor?</div>');
+  });
+})();
+</script>
+</body>
+</html>
