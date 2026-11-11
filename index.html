@@ -152,7 +152,7 @@
   .fa-page .scan-msg { font-size:19px; font-weight:500; color:var(--ink); min-height:28px; margin:0 0 26px; }
   .fa-page .scan-msg.warn { color:#b45309; font-weight:600; }
   .fa-page .scan-wrap { width:min(76vw, 300px); height:min(76vw, 300px); padding:7px; margin:0 auto 40px;
-                        background:conic-gradient(#16a34a calc(var(--p) * 1%), #1d4ed8 0); box-shadow:none; }
+                        background:#1d4ed8; box-shadow:none; }
   .fa-page .scan { border:6px solid #fff; background:#e8eefc; }
   .fa-page .scan-line { display:none !important; }
   .scan-grid { position:absolute; top:0; right:0; bottom:0; left:0; pointer-events:none;
@@ -627,6 +627,49 @@ function inAppNote() {
   return '<div class="note" style="text-align:left"><span>⚠️</span><div><b>Open CourseMatch in ' + (ios ? 'Safari' : 'Chrome') + '.</b> Messenger and Facebook can’t open the camera face scan or use Face ID or fingerprint. ' +
     'Tap <b>⋯</b> (top right) → <b>Open in ' + (ios ? 'Safari' : 'browser / Chrome') + '</b>.</div></div>';
 }
+/**
+ * Messenger / Facebook / Instagram / TikTok built-in browsers block the camera and Face ID.
+ * Instead of a scan that can never work, show one screen that sends the person to Safari or Chrome.
+ */
+function appLink() { return (CFG && CFG.appUrl) || location.href.split('#')[0]; }
+function openInBrowser() {
+  var url = appLink(), k = deviceKind();
+  if (k === 'android') {   // Android: this link opens the page straight in Chrome
+    location.href = 'intent://' + url.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(url) + ';end';
+    return;
+  }
+  if (k === 'iphone' || k === 'ipad') {   // iPhone: works on newer iOS; the steps below are the backup
+    location.href = 'x-safari-' + url;
+    setTimeout(function () { toast('If Safari did not open, tap ••• at the top right, then “Open in Safari”.'); }, 1500);
+    return;
+  }
+  copyAppLink();
+}
+function copyAppLink() {
+  var url = appLink(), box = $('appLinkBox');
+  var done = function () { toast('Link copied. Paste it into ' + (deviceKind() === 'iphone' || deviceKind() === 'ipad' ? 'Safari' : 'Chrome') + '.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(url).then(done, function () { if (box) { box.select(); } toast('Press and hold the link to copy it.'); });
+  if (box) { box.select(); try { document.execCommand('copy'); return done(); } catch (e) { /* fall through */ } }
+  toast('Press and hold the link to copy it.');
+}
+function showOpenOutside() {
+  camStop(); USER = null; drawTop(); busy(false);
+  var ios = deviceKind() === 'iphone' || deviceKind() === 'ipad', br = ios ? 'Safari' : 'Chrome';
+  var app = /Instagram/i.test(navigator.userAgent) ? 'Instagram' : /TikTok|musical_ly/i.test(navigator.userAgent) ? 'TikTok' : /Line\//.test(navigator.userAgent) ? 'LINE' :
+            /Messenger/i.test(navigator.userAgent) ? 'Messenger' : 'Facebook';
+  render('<div class="fa-page"><div class="fa-bar"><span>Login Authentication</span></div><div class="fa-body">' +
+    '<div class="face-ico" style="width:96px;height:96px;border-radius:50%;margin:0 auto 18px">' + icon('face') + '</div>' +
+    '<h1 style="font-size:23px">Open CourseMatch in ' + br + '</h1>' +
+    '<p class="sub">' + app + ' blocks the camera and Face ID, so the face scan cannot work here. Open this page in <b>' + br + '</b> to sign in.</p>' +
+    '<button class="big fr-btn" onclick="openInBrowser()">' + icon('arrow') + 'Open in ' + br + '</button>' +
+    '<div class="note info" style="margin-top:20px"><span>👆</span><div><b>If it does not open:</b><br>1. Tap <b>•••</b> at the top right of this screen.<br>2. Tap <b>' +
+      (ios ? 'Open in Safari' : 'Open in Chrome</b> (or <b>Open in browser</b>)') + (ios ? '</b>' : '') + '.</div></div>' +
+    '<p class="small muted" style="margin:16px 0 6px">Or copy the link and paste it in ' + br + ':</p>' +
+    '<input id="appLinkBox" readonly value="' + esc(appLink()) + '" onclick="this.select()" style="text-align:center;font-size:14px">' +
+    '<button class="sec big" style="margin-top:10px" onclick="copyAppLink()">Copy link</button>' +
+    '</div></div>');
+}
+
 /** On the Apps Script link (password only), send people to the real app where biometrics work. */
 function showLauncher(msg) {
   USER = null; drawTop();
@@ -776,13 +819,14 @@ function snapshot(v) {
  * Accounts that only have Face ID / fingerprint (passkey) verify with that first, then save a face scan.
  */
 function faceStep(mode, locked) {
+  if (FACE.here && inAppBrowser()) return showOpenOutside();   // Messenger etc. cannot scan: send to Safari / Chrome
   camStop(); FS.locked = !!locked; FS.after = null; FS.mustEnroll = false;
   render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() + '<p class="muted">Getting ready…</p></div></div>');
   if (!CFG.faceScan) return serverOld(mode, locked);
   api('faceStatus').then(function (st) {
     FS.enrolled = !!st.enrolled; FS.passkeys = !!st.passkeys;
+    if (!camSupported() && inAppBrowser()) return showOpenOutside();
     if (!camSupported()) {
-      if (FACE.ready) return passkeyStep(mode === 'setup' ? 'setup' : 'verify', locked);
       return render('<div class="auth-wrap" style="grid-template-columns:1fr;max-width:460px"><div class="card auth-card welcome">' + bioIcons() +
         '<h1 style="font-size:22px">Camera not available</h1><p class="sub">This browser cannot open the camera for the face scan. Open CourseMatch in Chrome or Safari ' +
         '(not inside Messenger or Facebook).</p>' + (inAppBrowser() ? inAppNote() : '') + '<button class="sec big" onclick="PENDING=null;signOut()">Sign out</button></div></div>');
@@ -1074,6 +1118,7 @@ function go(page) {
 // ------------------------------------------------------------ sign in / sign up
 function showAuth(mode, msg) {
   USER = null; drawTop();
+  if (FACE.here && inAppBrowser()) return showOpenOutside();
   if (!FACE.here && CFG.appUrl && CFG.faceRequired) return showLauncher(msg);
   var signup = mode === 'signup';
   var hasFace = false;   // sign-in is always: password, then the camera face scan
@@ -1790,6 +1835,7 @@ function saveEndorse() {
   }).then(function () {
     TOKEN = load('cm_token');
     if (!FACE.here && CFG.appUrl && CFG.faceRequired) { busy(false); return showLauncher(); }
+    if (FACE.here && inAppBrowser()) { busy(false); return showOpenOutside(); }
     if (TOKEN && verifyReady()) {
       // On the app page, opening the app always asks for Face ID / fingerprint, even if you are still signed in.
       return api('me').then(function (m) { busy(false); PENDING = m.user; faceStep(m.pending ? 'verify' : 'verify'); }).catch(function (e) { fail(e); });
