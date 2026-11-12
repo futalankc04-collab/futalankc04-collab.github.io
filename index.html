@@ -327,7 +327,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.9 faster camera switch</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.10 switch camera button</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -816,15 +816,21 @@ if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator
 function camShowSwitch() {
   camList().then(function (cams) {
     var b = $('camSwitch'); if (!b) return;
-    b.classList.toggle('hidden', cams.length < 2);
+    b.classList.remove('hidden');
     var cur = cams.filter(function (c) { return c.deviceId === CAM.current; })[0];
     var lbl = $('camName'); if (lbl) lbl.textContent = cur && cur.label ? 'Camera: ' + cur.label : '';
   });
 }
 /** Moves to the next camera. auto = true when the picture was black (skips cameras already tried). */
 function switchCamera(auto) {
+  if (!auto) camList.cache = null;   // a webcam may have just been plugged in
   return camList().then(function (cams) {
-    if (cams.length < 2) return false;
+    if (cams.length < 2) {
+      if (!auto && !CAM.stream && cams.length) { resetScanUi(); startScan(CAM.kind || 'verify', true); return false; }   // camera never opened: try it again
+      if (!auto) scanMsg(cams.length ? 'Only one camera was found on this device. Check that the webcam is plugged in and not used by another app (Zoom, Teams, the Camera app), then tap Switch camera again.'
+                                     : 'No camera was found. Plug in the webcam, allow the camera for this site, then tap Switch camera.', true);
+      return false;
+    }
     if (CAM.current) CAM.tried[CAM.current] = true;
     var i = cams.map(function (c) { return c.deviceId; }).indexOf(CAM.current), next = null;
     for (var k = 1; k <= cams.length; k++) {
@@ -933,7 +939,7 @@ function scanScreen(kind) {
     '<div id="scanCheck" class="scan-check hidden">' + checkSvg('') + '</div></div></div>' +
     '<p class="fa-tips">Position your face within the frame.<br>Kindly remove your face mask if you’re wearing one.<br>Your face will be automatically scanned.</p>' +
     '<button id="scanBtn" class="big fr-btn hidden" onclick="startScan(\'' + mode + '\')">' + icon('face') + 'Open camera</button>' +
-    '<div><button id="camSwitch" class="link hidden" style="margin-top:10px" onclick="switchCamera(false)">' + icon('refresh') + ' Switch camera</button></div>' +
+    '<div><button id="camSwitch" class="sec sm" style="margin-top:12px" onclick="switchCamera(false)">' + icon('refresh') + ' Switch camera</button></div>' +
     '<div id="camName" class="tiny muted"></div></div>' +
     '<div id="err" class="err"></div><div id="fsAlt" class="actions" style="justify-content:center"></div>' +
     '<p class="fa-foot">Use good light and hold your ' + (isPhone() ? 'phone' : 'screen') + ' at eye level. Your photo is not uploaded or saved.<br>' +
@@ -949,6 +955,7 @@ function resetScanUi() {
   ['scanLine', 'scanSnap', 'scanCheck'].forEach(function (id) { var el = $(id); if (el) el.classList.add('hidden'); });
   var idle = $('scanIdle'); if (idle) idle.classList.remove('hidden');
   setScanP(0); scanMsg('');
+  var sw = $('camSwitch'); if (sw) sw.disabled = false;
 }
 function startScan(kind, auto) {
   var btn = $('scanBtn'), video = $('scanVideo');
@@ -1036,7 +1043,7 @@ function runScan(kind) {
   function finish(v) {
     var snap = snapshot(v);
     camStop();
-    var sw = $('camSwitch'); if (sw) sw.classList.add('hidden');
+    var sw = $('camSwitch'); if (sw) sw.disabled = true;
     setScanP(100);
     $('scanLine').classList.add('hidden');
     if (snap) { $('scanSnap').src = snap; $('scanSnap').classList.remove('hidden'); }
