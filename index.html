@@ -327,7 +327,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.7 login authentication</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.8 face-only sign-in</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -907,8 +907,9 @@ function rescanFace() { FS.locked = false; FS.mustEnroll = false; FS.after = fun
 
 function scanScreen(kind) {
   camStop();
-  var who = PENDING || USER || {}, first = esc(String(who.name || '').split(' ')[0] || 'there'), enroll = kind === 'enroll';
-  var back = FS.after ? 'camStop();FS.after=null;go(\'password\')' : 'camStop();PENDING=null;signOut()';
+  var who = PENDING || USER || {}, first = esc(String(who.name || '').split(' ')[0] || who.username || 'there'), enroll = kind === 'enroll';
+  var mode = kind === 'login' ? 'login' : (enroll ? 'enroll' : 'verify');
+  var back = kind === 'login' ? 'camStop();PENDING=null;showAuth(\'login\')' : FS.after ? 'camStop();FS.after=null;go(\'password\')' : 'camStop();PENDING=null;signOut()';
   var note = FS.locked ? '<div class="note info">' + icon('lock') + '<div>Locked after ' + LOCK_MINUTES + ' minutes away. Scan your face to continue.</div></div>' : '';
   var first_time = enroll ? '<div class="note info">' + icon('face') + '<div>Hi ' + first + '! This first scan saves your face so CourseMatch can recognize you every time you sign in.</div></div>' : '';
   // Full-screen "Login Authentication" page: blue header, status text, face circle with grid, instructions. Scans automatically.
@@ -921,16 +922,16 @@ function scanScreen(kind) {
     '<div id="scanLine" class="scan-line hidden"></div><div id="scanIdle" class="scan-idle">' + icon('user') + '<span>Camera is starting…</span></div>' +
     '<div id="scanCheck" class="scan-check hidden">' + checkSvg('') + '</div></div></div>' +
     '<p class="fa-tips">Position your face within the frame.<br>Kindly remove your face mask if you’re wearing one.<br>Your face will be automatically scanned.</p>' +
-    '<button id="scanBtn" class="big fr-btn hidden" onclick="startScan(\'' + (enroll ? 'enroll' : 'verify') + '\')">' + icon('face') + 'Open camera</button>' +
+    '<button id="scanBtn" class="big fr-btn hidden" onclick="startScan(\'' + mode + '\')">' + icon('face') + 'Open camera</button>' +
     '<div><button id="camSwitch" class="link hidden" style="margin-top:10px" onclick="switchCamera(false)">' + icon('refresh') + ' Switch camera</button></div>' +
     '<div id="camName" class="tiny muted"></div></div>' +
     '<div id="err" class="err"></div><div id="fsAlt" class="actions" style="justify-content:center"></div>' +
     '<p class="fa-foot">Use good light and hold your ' + (isPhone() ? 'phone' : 'screen') + ' at eye level. Your photo is not uploaded or saved.<br>' +
-    (FS.after ? '<a onclick="' + back + '">Cancel</a>' : 'Not ' + first + '? <a onclick="' + back + '">Sign out</a>') + '</p></div></div>');
+    (FS.after || kind === 'login' ? '<a onclick="' + back + '">' + (kind === 'login' ? 'Back to sign in' : 'Cancel') + '</a>' : 'Not ' + first + '? <a onclick="' + back + '">Sign out</a>') + '</p></div></div>');
   if (inAppBrowser()) $('fsAlt').insertAdjacentHTML('afterend', inAppNote());
   if (!camSupported()) { scanMsg(''); return setErr('This browser cannot open the camera. Open CourseMatch in Chrome or Safari.'); }
   // open the camera right away: the person only has to put their face inside the circle
-  setTimeout(function () { if ($('scanBtn') && !CAM.run && !CAM.stream) startScan(enroll ? 'enroll' : 'verify', true); }, 250);
+  setTimeout(function () { if ($('scanBtn') && !CAM.run && !CAM.stream) startScan(mode, true); }, 250);
 }
 function resetScanUi() {
   var btn = $('scanBtn');
@@ -1033,8 +1034,11 @@ function runScan(kind) {
 function sendScan(kind, samples, snap) {
   scanMsg(kind === 'enroll' ? 'Saving your face scan…' : 'Checking your face…');
   busy(true, kind === 'enroll' ? 'Saving your face scan…' : 'Checking your face…');
-  api(kind === 'enroll' ? 'faceEnroll' : 'faceVerify', { descriptors: samples, device: deviceLabel() }).then(function (res) {
+  var call = kind === 'login' ? api('faceLogin', { username: FS.loginUser, descriptors: samples, device: deviceLabel() })
+                             : api(kind === 'enroll' ? 'faceEnroll' : 'faceVerify', { descriptors: samples, device: deviceLabel() });
+  call.then(function (res) {
     busy(false); FS.verified = true; FS.enrolled = true;
+    if (kind === 'login') { TOKEN = res.token; store('cm_token', TOKEN); PENDING = res.user; return showVerified('verify', res.user, snap); }
     showVerified(kind, res.user, snap);
   }).catch(function (e) {
     busy(false);
@@ -1190,7 +1194,7 @@ function showAuth(mode, msg) {
   if (FACE.here && inAppBrowser()) return showOpenOutside();
   if (!FACE.here && CFG.appUrl && CFG.faceRequired) return showLauncher(msg);
   var signup = mode === 'signup';
-  var hasFace = false;   // sign-in is always: password, then the camera face scan
+  var faceFirst = !signup && verifyReady() && camSupported() && !showAuth.pw;   // returning users: username + face scan, no password
   var faceTop = '';
   var lastUser = load('cm_user') || ((loadJson('cm_face') || {}).username) || '';
   var faceBlock = !FACE.here && CFG.appUrl ? '<div class="note info" style="margin-top:18px">' + icon('face') + '<div>Face and fingerprint sign-in work in the CourseMatch app. ' +
@@ -1207,18 +1211,26 @@ function showAuth(mode, msg) {
       '<label for="a_email">Email address</label><input id="a_email" type="email" maxlength="120" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com">' +
       '<div class="tiny muted" style="margin-top:4px">We send a reset code here if you forget your password.</div>' : '') +
     '<label for="a_user">Username</label><input id="a_user" maxlength="30" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="e.g. juan.delacruz" value="' + (signup ? '' : esc(lastUser)) + '">' +
-    '<label for="a_pass">Password</label><div class="pw"><input id="a_pass" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" placeholder="' + (signup ? 'At least 6 characters' : '') + '">' +
-    '<button type="button" class="link small" onclick="var i=$(\'a_pass\');i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'Show\':\'Hide\'">Show</button></div>' +
+    (faceFirst ? '' : '<label for="a_pass">Password</label><div class="pw"><input id="a_pass" type="password" autocomplete="' + (signup ? 'new-password' : 'current-password') + '" placeholder="' + (signup ? 'At least 6 characters' : '') + '">' +
+    '<button type="button" class="link small" onclick="var i=$(\'a_pass\');i.type=i.type===\'password\'?\'text\':\'password\';this.textContent=i.type===\'password\'?\'Show\':\'Hide\'">Show</button></div>') +
     (signup ? '<label for="a_role">I am a</label><select id="a_role" onchange="$(\'codeBox\').classList.toggle(\'hidden\', this.value!==\'counselor\')">' +
       '<option value="student">Student</option><option value="counselor">Guidance counselor</option></select>' +
       '<div id="codeBox" class="hidden"><label for="a_code">Counselor sign-up code</label><input id="a_code" maxlength="10" inputmode="numeric"></div>' +
       '<p class="tiny muted">By creating an account, you agree that your answers will be saved and seen by guidance counselors for career guidance only (Data Privacy Act of 2012). If you are below 18, ask your parent or guardian first.</p>' : '') +
-    (signup ? '' : '<div style="text-align:right;margin-top:8px"><a class="small" onclick="showForgot()">Forgot password?</a></div>') +
+    (signup || faceFirst ? '' : '<div style="text-align:right;margin-top:8px"><a class="small" onclick="showForgot()">Forgot password?</a></div>') +
     (signup && verifyReady() ? '<div class="note info" style="margin-top:14px">' + icon('face') + '<div>Next, you will scan your face with your camera. You will scan it again every time you sign in.</div></div>' : '') +
     '<div id="err" class="err">' + esc(msg || '') + '</div>' +
-    '<button class="big' + (FACE.ready && !signup && hasFace ? ' sec' : '') + '" onclick="' + (signup ? 'doSignup()' : 'doLogin()') + '">' + (signup ? 'Create my account' : 'Sign in with password') + '</button>' +
-    (verifyReady() && !signup ? '<div class="note info" style="margin-top:16px">' + icon('face') + '<div>After your password, the camera opens. Put your face inside the circle to verify.</div></div>' : '') +
+    (faceFirst
+      ? '<button class="big" onclick="doFaceLogin()">' + icon('face') + ' Sign in with face scan</button>' +
+        '<div class="actions" style="justify-content:center"><button class="link" onclick="showAuth.pw=true;showAuth(\'login\')">Use password instead</button></div>' +
+        '<div class="note info" style="margin-top:12px">' + icon('face') + '<div>No password needed: type your username, then put your face inside the circle. ' +
+        '<b>First time on CourseMatch?</b> Use your password once to save your face.</div></div>'
+      : '<button class="big" onclick="' + (signup ? 'doSignup()' : 'doLogin()') + '">' + (signup ? 'Create my account' : 'Sign in with password') + '</button>' +
+        (!signup && verifyReady() && camSupported() ? '<div class="actions" style="justify-content:center"><button class="link" onclick="showAuth.pw=false;showAuth(\'login\')">Sign in with face scan instead</button></div>' : '') +
+        (verifyReady() && !signup ? '<div class="note info" style="margin-top:16px">' + icon('face') + '<div>After your password, the camera opens. Put your face inside the circle to verify.</div></div>' : '')) +
     faceBlock + '</div></div>');
+  var userBox = $('a_user');
+  if (userBox && faceFirst) userBox.addEventListener('keydown', function (e) { if (e.key === 'Enter') doFaceLogin(); });
   var pass = $('a_pass');
   if (pass) pass.addEventListener('keydown', function (e) { if (e.key === 'Enter') { if (signup) doSignup(); else doLogin(); } });
 }
@@ -1275,6 +1287,15 @@ function doLogin() {
   if (!u || !p) { setErr('Please enter your username and password.'); return; }
   busy(true, 'Signing you in…');
   api('login', { username: u, password: p }).then(function (r) { return afterAuth(r, 'password'); }).catch(function (e) { fail(e); });
+}
+/** Face-only sign-in: username, then the camera scan. No password. */
+function doFaceLogin() {
+  var u = val('a_user').toLowerCase();
+  if (!u) { setErr('Please enter your username.'); return; }
+  store('cm_user', u);
+  FS.loginUser = u; FS.after = null; FS.locked = false; FS.mustEnroll = false;
+  PENDING = { username: u, name: '' };
+  scanScreen('login');
 }
 function doSignup() {
   var d = { name: val('a_name'), username: val('a_user'), email: val('a_email'), password: $('a_pass').value, role: $('a_role').value, counselorCode: val('a_code') };
