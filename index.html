@@ -327,7 +327,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.8 face-only sign-in</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.9 faster camera switch</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -754,7 +754,12 @@ function loadFaceLib() {
 function camStart(video) {
   var want = CAM.deviceId ? { deviceId: { exact: CAM.deviceId }, width: { ideal: 640 }, height: { ideal: 480 } }
                           : { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } };
-  return navigator.mediaDevices.getUserMedia({ audio: false, video: want })
+  var ask = function () { return navigator.mediaDevices.getUserMedia({ audio: false, video: want }); };
+  return ask()
+    .catch(function (e) {   // the previous camera is often still being released (Windows): wait a moment and try the same camera again
+      if (CAM.deviceId && e && (e.name === 'NotReadableError' || e.name === 'AbortError')) return new Promise(function (r) { setTimeout(r, 400); }).then(ask);
+      throw e;
+    })
     .catch(function (e) {
       if (CAM.deviceId && e && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError' || e.name === 'NotReadableError')) {
         CAM.deviceId = ''; store('cm_cam', null);   // the saved camera was unplugged: use the default one
@@ -782,7 +787,7 @@ function camStart(video) {
             var done = false;
             var ok = function () { if (!done) { done = true; resolve(); } };
             video.addEventListener('loadeddata', ok);
-            setTimeout(ok, 4000);
+            setTimeout(ok, 2500);
           });
         });
     });
@@ -798,10 +803,15 @@ function camIsBlack(video) {
   } catch (e) { return false; }
 }
 function camList() {
+  if (camList.cache && camList.cache.length) return Promise.resolve(camList.cache);
   if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return Promise.resolve([]);
-  return navigator.mediaDevices.enumerateDevices().then(function (l) { return l.filter(function (d) { return d.kind === 'videoinput' && d.deviceId; }); })
-    .catch(function () { return []; });
+  return navigator.mediaDevices.enumerateDevices().then(function (l) {
+    var cams = l.filter(function (d) { return d.kind === 'videoinput' && d.deviceId; });
+    if (cams.length && cams[0].label) camList.cache = cams;   // labels appear only after camera permission
+    return cams;
+  }).catch(function () { return []; });
 }
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', function () { camList.cache = null; });
 /** Shows "Switch camera" when the computer has more than one camera. */
 function camShowSwitch() {
   camList().then(function (cams) {
@@ -824,8 +834,8 @@ function switchCamera(auto) {
     if (!next) return false;
     CAM.deviceId = next.deviceId; store('cm_cam', next.deviceId);
     camStop(); resetScanUi(); setErr('');
-    scanMsg('Trying ' + (next.label || 'another camera') + '…');
-    startScan(CAM.kind, true);
+    scanMsg('Switching to ' + (next.label || 'another camera') + '…');
+    setTimeout(function () { startScan(CAM.kind, true); }, 250);   // lets the old camera close first
     return true;
   });
 }
@@ -951,13 +961,16 @@ function startScan(kind, auto) {
     var idle = $('scanIdle'); if (idle) idle.classList.add('hidden');
     camShowSwitch();
     // black picture (e.g. the Windows Hello infrared camera)? try the next camera automatically
-    setTimeout(function () {
+    var blackChecks = 0, stream0 = CAM.stream;
+    (function checkBlack() {
       var v = $('scanVideo');
-      if (!v || !CAM.stream || !camIsBlack(v)) { CAM.tried = {}; return; }
+      if (!v || !CAM.stream || CAM.stream !== stream0) return;           // stopped or already switched
+      if (!camIsBlack(v)) { CAM.tried = {}; return; }                     // picture is fine
+      if (++blackChecks < 4) return setTimeout(checkBlack, 300);          // still warming up: look again (about 1 s in total)
       switchCamera(true).then(function (moved) {
         if (!moved) scanMsg('The camera picture is black. Open the webcam cover, or tap “Switch camera”.', true);
       });
-    }, 1800);
+    })();
     if (!window.faceapi || !faceapi.nets.faceRecognitionNet.isLoaded) scanMsg('Loading the face scanner… (the first time takes a few seconds)');
   }).catch(function () { /* handled below */ });
   Promise.all([camP, loadFaceLib()]).then(function () { runScan(kind); }).catch(function (e) {
