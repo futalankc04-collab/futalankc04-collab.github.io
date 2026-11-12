@@ -328,7 +328,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v3.1 fake-face check (fewer false blocks)</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v3.2 fake-face check (personal baseline)</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -1099,7 +1099,6 @@ function runScan(kind) {
       var proof = { challenge: FS.ch ? { id: FS.ch.id, dir: FS.ch.dir, done: st.turned } : null, real: median(st.real), live: median(st.live) };
       FS.ch = null;   // a challenge works only once
       FS.lastProof = proof;
-      if (spoofOn() && (proof.real < CFG.spoof.minReal || (CFG.spoof.minLive > 0 && proof.live < CFG.spoof.minLive))) showFake();
       sendScan(kind, st.samples, snap, proof);
     });
   }
@@ -1129,10 +1128,8 @@ function sendScan(kind, samples, snap, proof) {
     resetScanUi(); setErr(m);
     if (fake) {
       showFake(); scanMsg('⚠ Sign-in blocked: security check failed', true);
-      var pr = FS.lastProof || {}, el = $('err');
-      if (el && isFinite(pr.real)) el.insertAdjacentHTML('beforeend', '<div class="tiny muted" style="margin-top:6px">Security score: real ' + pr.real.toFixed(2) +
-        ' (needs ' + CFG.spoof.minReal + ')' + (CFG.spoof.minLive > 0 ? ', live ' + pr.live.toFixed(2) + ' (needs ' + CFG.spoof.minLive + ')' : '') +
-        '. If this is your real face, try brighter light facing you, or ask your counselor.</div>');
+      var el = $('err');
+      if (el) el.insertAdjacentHTML('beforeend', '<div class="tiny muted" style="margin-top:6px">If this is your real face, face a window or a lamp and try again, or ask your counselor.</div>');
     }
   });
 }
