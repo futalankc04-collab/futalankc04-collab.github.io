@@ -327,7 +327,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.6 login authentication</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.7 login authentication</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -721,7 +721,7 @@ function isPhone() { var k = deviceKind(); return k === 'iphone' || k === 'ipad'
 // ---------------- camera selfie scan (face-api.js runs in the browser; only 128 numbers go to the server)
 var FACE_CDNS = ['https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/', 'https://unpkg.com/@vladmandic/face-api@1.7.15/'];
 var FACE_MODELS = FACE_CDNS[0] + 'model/';
-var CAM = { loading: null, stream: null, run: false, timer: null };
+var CAM = { loading: null, stream: null, run: false, timer: null, deviceId: load('cm_cam') || '', tried: {}, kind: 'verify' };
 var FS = { enrolled: false, passkeys: false, mustEnroll: false, verified: false, locked: false, after: null };
 
 function camSupported() { return !IN_GAS && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false; }
@@ -752,7 +752,16 @@ function loadFaceLib() {
 }
 /** Opens the front (selfie) camera. Works in Safari (iPhone/iPad/Mac), Chrome, Edge, Firefox and Samsung Internet. */
 function camStart(video) {
-  return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } })
+  var want = CAM.deviceId ? { deviceId: { exact: CAM.deviceId }, width: { ideal: 640 }, height: { ideal: 480 } }
+                          : { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } };
+  return navigator.mediaDevices.getUserMedia({ audio: false, video: want })
+    .catch(function (e) {
+      if (CAM.deviceId && e && (e.name === 'OverconstrainedError' || e.name === 'NotFoundError' || e.name === 'NotReadableError')) {
+        CAM.deviceId = ''; store('cm_cam', null);   // the saved camera was unplugged: use the default one
+        return navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } });
+      }
+      throw e;
+    })
     .catch(function (e) {
       if (e && (e.name === 'OverconstrainedError' || e.name === 'ConstraintNotSatisfiedError' || e.name === 'NotReadableError' || e.name === 'AbortError')) {
         return navigator.mediaDevices.getUserMedia({ audio: false, video: true });
@@ -763,6 +772,7 @@ function camStart(video) {
       if (!$('scanVideo')) { stream.getTracks().forEach(function (t) { t.stop(); }); throw new Error('cancelled'); }
       camStop();
       CAM.stream = stream;
+      try { CAM.current = stream.getVideoTracks()[0].getSettings().deviceId || ''; } catch (e) { CAM.current = ''; }
       video.muted = true; video.setAttribute('muted', ''); video.setAttribute('playsinline', ''); video.setAttribute('autoplay', '');
       video.srcObject = stream;
       return Promise.resolve().then(function () { return video.play(); }).catch(function () { /* autoplay is allowed for muted video */ })
@@ -776,6 +786,48 @@ function camStart(video) {
           });
         });
     });
+}
+/** True when the camera sends only a black picture (Windows Hello infrared camera, closed shutter, virtual camera). */
+function camIsBlack(video) {
+  try {
+    var c = document.createElement('canvas'); c.width = 32; c.height = 24;
+    var ctx = c.getContext('2d'); ctx.drawImage(video, 0, 0, 32, 24);
+    var d = ctx.getImageData(0, 0, 32, 24).data, sum = 0;
+    for (var i = 0; i < d.length; i += 4) sum += d[i] + d[i + 1] + d[i + 2];
+    return sum / (d.length / 4 * 3) < 12;
+  } catch (e) { return false; }
+}
+function camList() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return Promise.resolve([]);
+  return navigator.mediaDevices.enumerateDevices().then(function (l) { return l.filter(function (d) { return d.kind === 'videoinput' && d.deviceId; }); })
+    .catch(function () { return []; });
+}
+/** Shows "Switch camera" when the computer has more than one camera. */
+function camShowSwitch() {
+  camList().then(function (cams) {
+    var b = $('camSwitch'); if (!b) return;
+    b.classList.toggle('hidden', cams.length < 2);
+    var cur = cams.filter(function (c) { return c.deviceId === CAM.current; })[0];
+    var lbl = $('camName'); if (lbl) lbl.textContent = cur && cur.label ? 'Camera: ' + cur.label : '';
+  });
+}
+/** Moves to the next camera. auto = true when the picture was black (skips cameras already tried). */
+function switchCamera(auto) {
+  return camList().then(function (cams) {
+    if (cams.length < 2) return false;
+    if (CAM.current) CAM.tried[CAM.current] = true;
+    var i = cams.map(function (c) { return c.deviceId; }).indexOf(CAM.current), next = null;
+    for (var k = 1; k <= cams.length; k++) {
+      var c = cams[(i + k + cams.length) % cams.length];
+      if (c.deviceId !== CAM.current && (!auto || !CAM.tried[c.deviceId])) { next = c; break; }
+    }
+    if (!next) return false;
+    CAM.deviceId = next.deviceId; store('cm_cam', next.deviceId);
+    camStop(); resetScanUi(); setErr('');
+    scanMsg('Trying ' + (next.label || 'another camera') + '…');
+    startScan(CAM.kind, true);
+    return true;
+  });
 }
 function camStop() {
   CAM.run = false;
@@ -869,7 +921,9 @@ function scanScreen(kind) {
     '<div id="scanLine" class="scan-line hidden"></div><div id="scanIdle" class="scan-idle">' + icon('user') + '<span>Camera is starting…</span></div>' +
     '<div id="scanCheck" class="scan-check hidden">' + checkSvg('') + '</div></div></div>' +
     '<p class="fa-tips">Position your face within the frame.<br>Kindly remove your face mask if you’re wearing one.<br>Your face will be automatically scanned.</p>' +
-    '<button id="scanBtn" class="big fr-btn hidden" onclick="startScan(\'' + (enroll ? 'enroll' : 'verify') + '\')">' + icon('face') + 'Open camera</button></div>' +
+    '<button id="scanBtn" class="big fr-btn hidden" onclick="startScan(\'' + (enroll ? 'enroll' : 'verify') + '\')">' + icon('face') + 'Open camera</button>' +
+    '<div><button id="camSwitch" class="link hidden" style="margin-top:10px" onclick="switchCamera(false)">' + icon('refresh') + ' Switch camera</button></div>' +
+    '<div id="camName" class="tiny muted"></div></div>' +
     '<div id="err" class="err"></div><div id="fsAlt" class="actions" style="justify-content:center"></div>' +
     '<p class="fa-foot">Use good light and hold your ' + (isPhone() ? 'phone' : 'screen') + ' at eye level. Your photo is not uploaded or saved.<br>' +
     (FS.after ? '<a onclick="' + back + '">Cancel</a>' : 'Not ' + first + '? <a onclick="' + back + '">Sign out</a>') + '</p></div></div>');
@@ -888,11 +942,21 @@ function resetScanUi() {
 function startScan(kind, auto) {
   var btn = $('scanBtn'), video = $('scanVideo');
   if (!btn || !video || CAM.run || btn.disabled) return;
+  CAM.kind = kind;
   setErr(''); btn.disabled = true; btn.classList.add('hidden'); scanMsg('Opening your camera…');
   var camP = camStart(video);   // called straight from the tap (iPhone needs this)
   camP.then(function () {
     if (!$('scanBtn') || !$('scanBtn').disabled) return;   // the scan already stopped with an error
     var idle = $('scanIdle'); if (idle) idle.classList.add('hidden');
+    camShowSwitch();
+    // black picture (e.g. the Windows Hello infrared camera)? try the next camera automatically
+    setTimeout(function () {
+      var v = $('scanVideo');
+      if (!v || !CAM.stream || !camIsBlack(v)) { CAM.tried = {}; return; }
+      switchCamera(true).then(function (moved) {
+        if (!moved) scanMsg('The camera picture is black. Open the webcam cover, or tap “Switch camera”.', true);
+      });
+    }, 1800);
     if (!window.faceapi || !faceapi.nets.faceRecognitionNet.isLoaded) scanMsg('Loading the face scanner… (the first time takes a few seconds)');
   }).catch(function () { /* handled below */ });
   Promise.all([camP, loadFaceLib()]).then(function () { runScan(kind); }).catch(function (e) {
@@ -958,6 +1022,7 @@ function runScan(kind) {
   function finish(v) {
     var snap = snapshot(v);
     camStop();
+    var sw = $('camSwitch'); if (sw) sw.classList.add('hidden');
     setScanP(100);
     $('scanLine').classList.add('hidden');
     if (snap) { $('scanSnap').src = snap; $('scanSnap').classList.remove('hidden'); }
