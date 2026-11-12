@@ -114,6 +114,7 @@
                background:conic-gradient(#1d4ed8 calc(var(--p) * 1%), #dbeafe 0); box-shadow:0 10px 30px rgba(29,78,216,.18); }
   .scan { position:relative; width:100%; height:100%; border-radius:50%; overflow:hidden; background:#eef2ff; border:5px solid #fff;
           -webkit-mask-image:-webkit-radial-gradient(white, black); }
+  .scan-wrap.fake, .fa-page .scan-wrap.fake { background:#dc2626 !important; box-shadow:0 0 0 6px rgba(220,38,38,.18) !important; }
   .scan video { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); display:block; background:#eef2ff; }
   .scan-line { position:absolute; left:12%; right:12%; height:2px; top:18%; border-radius:2px; background:linear-gradient(90deg,transparent,#60a5fa,transparent);
                box-shadow:0 0 10px #60a5fa; animation:scanline 2.4s ease-in-out infinite; }
@@ -327,7 +328,7 @@
 <header class="top noprint" id="top"></header>
 <main id="app"><div class="card muted">Loading CourseMatch…</div></main>
 <nav class="tabs-bottom noprint" id="tabs"></nav>
-<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v2.10 switch camera button</span></footer>
+<footer>CourseMatch gives guidance only. Recommendations do not guarantee admission or eligibility. <span class="muted">· v3.1 fake-face check (fewer false blocks)</span></footer>
 <div id="spinner" class="spinner hidden"><span id="spinMsg">Please wait…</span></div>
 <div id="sheet"></div>
 <div id="toast"></div>
@@ -720,6 +721,42 @@ function isPhone() { var k = deviceKind(); return k === 'iphone' || k === 'ipad'
 
 // ---------------- camera selfie scan (face-api.js runs in the browser; only 128 numbers go to the server)
 var FACE_CDNS = ['https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/', 'https://unpkg.com/@vladmandic/face-api@1.7.15/'];
+// fake-face (anti-spoofing) models: "antispoof" = real face vs photo / screen / AI-made face, "liveness" = live person vs picture
+var SPOOF_CDNS = ['https://cdn.jsdelivr.net/npm/@vladmandic/human-models@3.0.4/models/', 'https://unpkg.com/@vladmandic/human-models@3.0.4/models/'];
+var SPOOF = { anti: null, live: null, loading: null };
+function spoofOn() { return !!(CFG && CFG.spoof && CFG.spoof.on); }
+function loadSpoof() {
+  if (!spoofOn() || (SPOOF.anti && SPOOF.live)) return Promise.resolve();
+  if (SPOOF.loading) return SPOOF.loading;
+  var tf = faceapi.tf;
+  SPOOF.loading = (function tryCdn(k) {
+    if (k >= SPOOF_CDNS.length) return Promise.reject(new Error('Could not load the security check. Check your internet connection and try again.'));
+    return Promise.all([tf.loadGraphModel(SPOOF_CDNS[k] + 'antispoof.json'), tf.loadGraphModel(SPOOF_CDNS[k] + 'liveness.json')])
+      .then(function (m) {
+        SPOOF.anti = m[0]; SPOOF.live = m[1];
+        // warm up once so the first real scan is not slow (prepares the phone's graphics chip)
+        var t = tf.tidy(function () { return [m[0].execute(tf.zeros([1, 128, 128, 3])), m[1].execute(tf.zeros([1, 32, 32, 3]))]; });
+        return Promise.all([t[0].data(), t[1].data()]).then(function () { tf.dispose(t); });
+      }).catch(function () { return tryCdn(k + 1); });
+  })(0).catch(function (e) { SPOOF.loading = null; throw e; });
+  return SPOOF.loading;
+}
+/** Scores one camera frame: real (0-1, higher = real face) and live (0-1, higher = live person). */
+function spoofScore(video, box) {
+  if (!SPOOF.anti || !SPOOF.live) return Promise.resolve(null);
+  var tf = faceapi.tf, w = video.videoWidth, h = video.videoHeight;
+  var sz = Math.max(box.width, box.height) * 1.4, cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+  var out = tf.tidy(function () {
+    var img = tf.browser.fromPixels(video).toFloat().expandDims(0);
+    var face = tf.image.cropAndResize(img, [[(cy - sz / 2) / h, (cx - sz / 2) / w, (cy + sz / 2) / h, (cx + sz / 2) / w]], [0], [128, 128]).div(255);
+    return [SPOOF.anti.execute(face), SPOOF.live.execute(tf.image.resizeBilinear(face, [32, 32]))];
+  });
+  return Promise.all([out[0].data(), out[1].data()]).then(function (r) {
+    tf.dispose(out);
+    return { real: r[0][0], live: r[1][0] };
+  }).catch(function () { tf.dispose(out); return null; });
+}
+function median(a) { if (!a.length) return NaN; var b = a.slice().sort(function (x, y) { return x - y; }), m = b.length >> 1; return b.length % 2 ? b[m] : (b[m - 1] + b[m]) / 2; }
 var FACE_MODELS = FACE_CDNS[0] + 'model/';
 var CAM = { loading: null, stream: null, run: false, timer: null, deviceId: load('cm_cam') || '', tried: {}, kind: 'verify' };
 var FS = { enrolled: false, passkeys: false, mustEnroll: false, verified: false, locked: false, after: null };
@@ -747,7 +784,7 @@ function loadFaceLib() {
   }).then(function () {
     return Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS),
       faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS), faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS)]);
-  }).catch(function (e) { CAM.loading = null; throw e; });
+  }).then(function () { return loadSpoof(); }).catch(function (e) { CAM.loading = null; throw e; });
   return CAM.loading;
 }
 /** Opens the front (selfie) camera. Works in Safari (iPhone/iPad/Mac), Chrome, Edge, Firefox and Samsung Internet. */
@@ -955,6 +992,7 @@ function resetScanUi() {
   ['scanLine', 'scanSnap', 'scanCheck'].forEach(function (id) { var el = $(id); if (el) el.classList.add('hidden'); });
   var idle = $('scanIdle'); if (idle) idle.classList.remove('hidden');
   setScanP(0); scanMsg('');
+  var fw = $('scanWrap'); if (fw && !fw.dataset.keepFake) fw.classList.remove('fake');
   var sw = $('camSwitch'); if (sw) sw.disabled = false;
 }
 function startScan(kind, auto) {
@@ -980,7 +1018,8 @@ function startScan(kind, auto) {
     })();
     if (!window.faceapi || !faceapi.nets.faceRecognitionNet.isLoaded) scanMsg('Loading the face scanner… (the first time takes a few seconds)');
   }).catch(function () { /* handled below */ });
-  Promise.all([camP, loadFaceLib()]).then(function () { runScan(kind); }).catch(function (e) {
+  var chP = spoofOn() ? api('faceChallenge').then(function (c) { FS.ch = c; }) : Promise.resolve(FS.ch = null);
+  Promise.all([camP, loadFaceLib(), chP]).then(function () { runScan(kind); }).catch(function (e) {
     camStop();
     if (e && e.message === 'cancelled') return;
     resetScanUi();
@@ -996,7 +1035,10 @@ function runScan(kind) {
   var video = $('scanVideo');
   if (!video) return camStop();
   var opts = new faceapi.TinyFaceDetectorOptions({ inputSize: isPhone() ? 256 : 320, scoreThreshold: 0.5 });
-  var st = { phase: 'look1', good: 0, samples: [], started: Date.now() };
+  var st = { phase: 'look1', good: 0, samples: [], started: Date.now(), real: [], live: [], turned: false };
+  var dir = FS.ch && FS.ch.dir ? FS.ch.dir : '', DIR = dir ? dir.toUpperCase() : 'left or right';
+  st.pending = [];
+  function score(v, d) { st.pending.push(spoofScore(v, d.detection.box).then(function (r) { if (r) { st.real.push(r.real); st.live.push(r.live); } })); }
   CAM.run = true;
   $('scanLine').classList.remove('hidden'); $('scanIdle').classList.add('hidden');
   setScanP(0); scanMsg('Position your face within the frame');
@@ -1022,8 +1064,11 @@ function runScan(kind) {
     if (g.cx < 0.2 || g.cx > 0.8 || g.cy < 0.15 || g.cy > 0.85) { st.good = 0; return scanMsg('Move your face to the middle of the circle', true); }
     var straight = g.yaw > 0.35 && g.yaw < 0.65;
     if (st.phase === 'turn') {
-      if (Math.abs(g.yaw - 0.5) > 0.13) { st.phase = 'look2'; st.good = 0; setScanP(66); return scanMsg('Good! Now look straight again and stay still'); }
-      return scanMsg('Turn your head slowly to the left or right');
+      // the picture on screen is mirrored: turning to your own LEFT moves the nose to the right of the camera frame (yaw > 0.5)
+      var moved = Math.abs(g.yaw - 0.5) > 0.13, wentLeft = g.yaw > 0.5;
+      if (moved && dir && (dir === 'left') !== wentLeft) return scanMsg('Other way: turn your head to the ' + DIR, true);
+      if (moved) { st.turned = true; st.phase = 'look2'; st.good = 0; setScanP(66); return scanMsg('Good! Now look straight again and stay still'); }
+      return scanMsg('Turn your head slowly to the ' + DIR);
     }
     if (!straight) { st.good = 0; return scanMsg('Look straight at the camera', true); }
     if (g.score < 0.5) { st.good = 0; return scanMsg('Stay still… more light helps', true); }
@@ -1032,9 +1077,10 @@ function runScan(kind) {
     if (st.good < 2 || !d.descriptor) return;
     st.good = 0;
     st.samples.push(Array.prototype.slice.call(d.descriptor));
+    score(v, d);
     if (st.phase === 'look1') {
       setScanP(st.samples.length * 17);
-      if (st.samples.length >= 2) { st.phase = 'turn'; setScanP(40); scanMsg('Now turn your head slowly to the left or right'); }
+      if (st.samples.length >= 2) { st.phase = 'turn'; setScanP(40); scanMsg('Now turn your head slowly to the ' + DIR); }
     } else {
       setScanP(66 + (st.samples.length - 2) * 17);
       if (st.samples.length >= 4) finish(v);
@@ -1047,15 +1093,29 @@ function runScan(kind) {
     setScanP(100);
     $('scanLine').classList.add('hidden');
     if (snap) { $('scanSnap').src = snap; $('scanSnap').classList.remove('hidden'); }
-    sendScan(kind, st.samples, snap);
+    // wait for every fake-face score to finish (at most 8 seconds), then send
+    var cap = new Promise(function (r) { setTimeout(r, 8000); });
+    Promise.race([Promise.all(st.pending), cap]).then(function () {
+      var proof = { challenge: FS.ch ? { id: FS.ch.id, dir: FS.ch.dir, done: st.turned } : null, real: median(st.real), live: median(st.live) };
+      FS.ch = null;   // a challenge works only once
+      FS.lastProof = proof;
+      if (spoofOn() && (proof.real < CFG.spoof.minReal || (CFG.spoof.minLive > 0 && proof.live < CFG.spoof.minLive))) showFake();
+      sendScan(kind, st.samples, snap, proof);
+    });
   }
   next();   // start reading the camera
 }
-function sendScan(kind, samples, snap) {
+function showFake() {
+  scanMsg('⚠ Fake face detected', true);
+  var w = $('scanWrap'); if (w) w.classList.add('fake');
+}
+function sendScan(kind, samples, snap, proof) {
+  proof = proof || {};
   scanMsg(kind === 'enroll' ? 'Saving your face scan…' : 'Checking your face…');
   busy(true, kind === 'enroll' ? 'Saving your face scan…' : 'Checking your face…');
-  var call = kind === 'login' ? api('faceLogin', { username: FS.loginUser, descriptors: samples, device: deviceLabel() })
-                             : api(kind === 'enroll' ? 'faceEnroll' : 'faceVerify', { descriptors: samples, device: deviceLabel() });
+  var payload = { descriptors: samples, device: deviceLabel(), challenge: proof.challenge, real: proof.real, live: proof.live };
+  if (kind === 'login') payload.username = FS.loginUser;
+  var call = api(kind === 'login' ? 'faceLogin' : kind === 'enroll' ? 'faceEnroll' : 'faceVerify', payload);
   call.then(function (res) {
     busy(false); FS.verified = true; FS.enrolled = true;
     if (kind === 'login') { TOKEN = res.token; store('cm_token', TOKEN); PENDING = res.user; return showVerified('verify', res.user, snap); }
@@ -1064,7 +1124,16 @@ function sendScan(kind, samples, snap) {
     busy(false);
     var m = e && e.message ? e.message : String(e);
     if (m.indexOf('SESSION_EXPIRED') !== -1) return fail(e);
+    var fake = m.indexOf('FAKE_FACE:') !== -1;
+    m = m.replace(/^.*FAKE_FACE:\s*/, '');
     resetScanUi(); setErr(m);
+    if (fake) {
+      showFake(); scanMsg('⚠ Sign-in blocked: security check failed', true);
+      var pr = FS.lastProof || {}, el = $('err');
+      if (el && isFinite(pr.real)) el.insertAdjacentHTML('beforeend', '<div class="tiny muted" style="margin-top:6px">Security score: real ' + pr.real.toFixed(2) +
+        ' (needs ' + CFG.spoof.minReal + ')' + (CFG.spoof.minLive > 0 ? ', live ' + pr.live.toFixed(2) + ' (needs ' + CFG.spoof.minLive + ')' : '') +
+        '. If this is your real face, try brighter light facing you, or ask your counselor.</div>');
+    }
   });
 }
 /** The check mark, then the person's details, then the dashboard. */
